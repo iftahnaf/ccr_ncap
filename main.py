@@ -4,6 +4,8 @@ import random
 import numpy as np
 from dynamics import Dynamics
 from sync_mode_scene import CarlaSyncMode
+from controller import Controller
+from estimator import RangeEstimator
 
 def main():
     actor_list = []
@@ -21,7 +23,6 @@ def main():
     world = client.get_world()
 
     try:
-        m = world.get_map()
 
         stationary_start_pose = carla.Transform(carla.Location(x=-50.0, y=0.0, z=0.15), carla.Rotation(pitch=0.000000, yaw=-90.642235, roll=0.000000))
         ego_start_pose = carla.Transform(carla.Location(x=-50.0, y=100.0, z=0.15), carla.Rotation(pitch=0.000000, yaw=-90.0, roll=0.000000))
@@ -51,6 +52,8 @@ def main():
             attach_to=ego_vehicle)
         actor_list.append(camera_semseg)
 
+        vd = Dynamics()
+
         # Create a synchronous mode context.
         with CarlaSyncMode(world, camera_rgb, camera_semseg, fps=30) as sync_mode:
             while True:
@@ -61,13 +64,21 @@ def main():
                 # Advance the simulation and wait for the data.
                 snapshot, image_rgb, image_semseg = sync_mode.tick(timeout=2.0)
 
-                vd = Dynamics()
+                # get the range between the two vehicles
+                range = RangeEstimator.naive_range_estimator(ego_vehicle, stationary_vehicle)
 
+                # calculate the control signal
+                control = Controller.range_controller(range, vd.get_speed_norm(ego_vehicle), 1.0, kt=0.75, kb=0.5)
+
+                # Apply the control signal to the ego vehicle
+                ego_vehicle.apply_control(control)
+
+                
                 x,y,z = vd.get_positon(ego_vehicle)
                 speed_norm = vd.get_speed_norm(ego_vehicle)
                 acceleration_norm = vd.get_acceleration_norm(ego_vehicle)
 
-                print(f"X: {x}, Y: {y}, Z: {z}, Speed: {speed_norm}, Acceleration: {acceleration_norm}")
+                # print(f"X: {x}, Y: {y}, Z: {z}, Speed: {speed_norm}, Acceleration: {acceleration_norm}")
 
                 image_semseg.convert(carla.ColorConverter.CityScapesPalette)
 
