@@ -1,6 +1,7 @@
 import pygame
 import carla
 import random
+import numpy as np
 from dynamics import Dynamics
 from sync_mode_scene import CarlaSyncMode
 
@@ -22,28 +23,32 @@ def main():
     try:
         m = world.get_map()
 
-        start_pose = random.choice(m.get_spawn_points())
-        waypoint = m.get_waypoint(start_pose.location)
+        stationary_start_pose = carla.Transform(carla.Location(x=-50.0, y=0.0, z=0.15), carla.Rotation(pitch=0.000000, yaw=-90.642235, roll=0.000000))
+        ego_start_pose = carla.Transform(carla.Location(x=-50.0, y=100.0, z=0.15), carla.Rotation(pitch=0.000000, yaw=-90.0, roll=0.000000))
 
         blueprint_library = world.get_blueprint_library()
 
-        vehicle = world.spawn_actor(
-            random.choice(blueprint_library.filter('vehicle.*')),
-            start_pose)
-        actor_list.append(vehicle)
+        # Spawn the stationary vehicle
+        stationary_vehicle = CarlaSyncMode.spawn_vehicle(world, 'vehicle.tesla.model3', stationary_start_pose)
+        stationary_vehicle.set_simulate_physics(False)
 
-        vehicle.set_simulate_physics(True)
+        # Spawn the controllable vehicle
+        ego_vehicle = CarlaSyncMode.spawn_vehicle(world, 'vehicle.bmw.grandtourer', ego_start_pose)
+        ego_vehicle.set_simulate_physics(True)
+
+        actor_list.append(stationary_vehicle)
+        actor_list.append(ego_vehicle)
 
         camera_rgb = world.spawn_actor(
             blueprint_library.find('sensor.camera.rgb'),
             carla.Transform(carla.Location(x=-5.5, z=2.8), carla.Rotation(pitch=-15)),
-            attach_to=vehicle)
+            attach_to=ego_vehicle)
         actor_list.append(camera_rgb)
 
         camera_semseg = world.spawn_actor(
             blueprint_library.find('sensor.camera.semantic_segmentation'),
             carla.Transform(carla.Location(x=-5.5, z=2.8), carla.Rotation(pitch=-15)),
-            attach_to=vehicle)
+            attach_to=ego_vehicle)
         actor_list.append(camera_semseg)
 
         # Create a synchronous mode context.
@@ -56,29 +61,20 @@ def main():
                 # Advance the simulation and wait for the data.
                 snapshot, image_rgb, image_semseg = sync_mode.tick(timeout=2.0)
 
-                # Choose the next waypoint and update the car location.
-                waypoint = random.choice(waypoint.next(1.5))
-                vehicle.set_transform(waypoint.transform)
-
                 vd = Dynamics()
 
-                x,y,z = vd.get_positon(vehicle)
-                speed_norm = vd.get_speed_norm(vehicle)
-                acceleration_norm = vd.get_acceleration_norm(vehicle)
-                print(x,y,z, speed_norm, acceleration_norm)
+                x,y,z = vd.get_positon(ego_vehicle)
+                speed_norm = vd.get_speed_norm(ego_vehicle)
+                acceleration_norm = vd.get_acceleration_norm(ego_vehicle)
+
+                print(f"X: {x}, Y: {y}, Z: {z}, Speed: {speed_norm}, Acceleration: {acceleration_norm}")
 
                 image_semseg.convert(carla.ColorConverter.CityScapesPalette)
-                fps = round(1.0 / snapshot.timestamp.delta_seconds)
 
                 # Draw the display.
                 CarlaSyncMode.draw_image(display, image_rgb)
                 CarlaSyncMode.draw_image(display, image_semseg, blend=True)
-                display.blit(
-                    font.render('% 5d FPS (real)' % clock.get_fps(), True, (255, 255, 255)),
-                    (8, 10))
-                display.blit(
-                    font.render('% 5d FPS (simulated)' % fps, True, (255, 255, 255)),
-                    (8, 28))
+                
                 pygame.display.flip()
 
     finally:

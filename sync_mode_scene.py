@@ -107,6 +107,17 @@ class CarlaSyncMode(object):
         font = default_font if default_font in fonts else fonts[0]
         font = pygame.font.match_font(font)
         return pygame.font.Font(font, 14)
+    
+    @staticmethod
+    def spawn_vehicle(world, blueprint_name, transform):
+        blueprint = world.get_blueprint_library().find(blueprint_name)
+        vehicle = world.spawn_actor(blueprint, transform)
+        return vehicle
+    
+    @staticmethod
+    def remove_all_actors(world):
+        for actor in world.get_actors():
+            actor.destroy()
 
     @staticmethod
     def should_quit():
