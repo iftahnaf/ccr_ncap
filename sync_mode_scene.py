@@ -90,17 +90,6 @@ class CarlaSyncMode(object):
                 return data
 
     @staticmethod
-    def draw_image(surface, image, blend=False):
-        array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
-        array = np.reshape(array, (image.height, image.width, 4))
-        array = array[:, :, :3]
-        array = array[:, :, ::-1]
-        image_surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
-        if blend:
-            image_surface.set_alpha(100)
-        surface.blit(image_surface, (0, 0))
-
-    @staticmethod
     def get_font():
         fonts = [x for x in pygame.font.get_fonts()]
         default_font = 'ubuntumono'

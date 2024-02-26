@@ -18,5 +18,4 @@ class Controller():
             req_throttle = 0.0
 
         control = carla.VehicleControl(throttle=req_throttle, steer=0.0, brake=req_brake, hand_brake=False, reverse=False, manual_gear_shift=False)
-        print(req_throttle, req_brake)
         return control
