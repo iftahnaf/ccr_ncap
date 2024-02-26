@@ -68,7 +68,7 @@ def main():
                 range = RangeEstimator.naive_range_estimator(ego_vehicle, stationary_vehicle)
 
                 # calculate the control signal
-                control = Controller.range_controller(range, vd.get_speed_norm(ego_vehicle), 1.0, kt=0.75, kb=0.5)
+                control = Controller.range_controller(range, vd.get_speed_norm(ego_vehicle), 1.0, kt_p=0.5, kt_d=0.01, kb_p=0.7)
 
                 # Apply the control signal to the ego vehicle
                 ego_vehicle.apply_control(control)
