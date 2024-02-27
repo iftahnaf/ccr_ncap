@@ -120,12 +120,12 @@ class CarlaSyncMode(object):
     
     @staticmethod
     def save_data_to_csv(velocity, acceleration, jerk, relative_distance, bbox, filename):
-        header = "velocity_x,velocity_y,velocity_z,acceleration_x,acceleration_y,acceleration_z,jerk_x,jerk_y,jerk_z,relative_distance,bbox_verdicts\n"
+        header = "velocity_x,velocity_y,velocity_z,acceleration_x,acceleration_y,acceleration_z,jerk_x,jerk_y,jerk_z,relative_distance,bbox_top_left_x,bbox_top_left_y,bbox_top_right_x,bbox_top_right_y,bbox_bottom_left_x,bbox_bottom_left_y,bbox_bottom_right_x,bbox_bottom_right_y\n"
         if not os.path.exists(filename) or os.path.getsize(filename) == 0:
             with open(filename, 'w') as f:
                 f.write(header)
         with open(filename, 'a') as f:
-            f.write(f"{velocity.x},{velocity.y},{velocity.z},{acceleration.x},{acceleration.y},{acceleration.z},{jerk[0]},{jerk[1]},{jerk[2]},{relative_distance},{bbox}\n")
+            f.write(f"{velocity.x},{velocity.y},{velocity.z},{acceleration.x},{acceleration.y},{acceleration.z},{jerk[0]},{jerk[1]},{jerk[2]},{relative_distance},{bbox[0]},{bbox[3]},{bbox[1]},{bbox[3]},{bbox[0]},{bbox[2]},{bbox[1]},{bbox[2]},\n")
 
     @staticmethod
     def get_vehicle_dimensions(blueprint):

@@ -133,14 +133,11 @@ class Visualizer:
 
     def get_bbox_vertices(self):
         try:
-            v1 = [self.x_min, self.y_min]
-            v2 = [self.x_max, self.y_min]
-            v3 = [self.x_max, self.y_max]
-            v4 = [self.x_min, self.y_max]
+            verdicts = [self.x_min, self.x_max, self.y_min, self.y_max]
         except Exception as e:
             if "has no attribute 'x_min'" in str(e):
-                return [[0,0], [0,0], [0,0], [0,0]]
-        return [v1, v2, v3, v4]
+                return [0, 0, 0, 0]
+        return verdicts
 
     # Bounding box docs: https://carla.readthedocs.io/en/latest/tuto_G_bounding_boxes/
  
