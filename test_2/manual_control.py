@@ -680,11 +680,18 @@ class LaneDetector(object):
     def detect(self, camera):
         self.world_2_camera = np.array(camera.get_transform().get_inverse_matrix())
 
+        all_waypoints = self.map.generate_waypoints(distance=1.0)
+
         location = self.vehicle.get_location()
         nearest_waypoint = self.map.get_waypoint(location, project_to_road=True)
 
-        left_lane_waypoint =  nearest_waypoint.get_left_lane()
-        right_lane_waypoint = nearest_waypoint.get_right_lane()
+        waypoint_on_map = self.get_nearest_waypoint_same_lane(nearest_waypoint, all_waypoints)
+
+        if waypoint_on_map is None:
+            return (0, 0), (0, 0)
+
+        left_lane_waypoint =  waypoint_on_map.get_left_lane()
+        right_lane_waypoint = waypoint_on_map.get_right_lane()
 
         try:
             left_lane_location = left_lane_waypoint.transform.location
@@ -728,6 +735,23 @@ class LaneDetector(object):
         K[0, 2] = w / 2.0
         K[1, 2] = h / 2.0
         return K
+    
+    @staticmethod
+    def get_nearest_waypoint_same_lane(nearest_waypoint, all_waypoints):
+        min_distance = float('inf')
+        closest_waypoint = None
+
+        for waypoint in all_waypoints:
+            # Check if Road ID and Lane ID match
+            if waypoint.road_id == nearest_waypoint.road_id and waypoint.lane_id == nearest_waypoint.lane_id:
+                # Calculate distance between waypoints
+                distance = math.sqrt((waypoint.transform.location.x - nearest_waypoint.transform.location.x)**2 + (waypoint.transform.location.y - nearest_waypoint.transform.location.y)**2)
+                # Update closest waypoint if this one is closer
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_waypoint = waypoint
+
+        return closest_waypoint
 
 # ==============================================================================
 # -- HUD -----------------------------------------------------------------------
