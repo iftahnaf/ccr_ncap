@@ -1,12 +1,13 @@
 import pygame
 import carla
+import cv2
 import numpy as np
 
 from dynamics import Dynamics
 from sync_mode_scene import CarlaSyncMode
 from controller import Controller
 from estimator import RangeEstimator
-from visualizer import ClientSideBoundingBoxes, Visualizer
+from visualizer import Visualizer
 
 VIEW_WIDTH = 1920//2
 VIEW_HEIGHT = 1080//2
@@ -22,8 +23,8 @@ def main():
     world = client.get_world()
 
     try:
-        stationary_start_pose = carla.Transform(carla.Location(x=-7.53, y=170.0, z=0.3), carla.Rotation(pitch=0.000000, yaw=-90.642235, roll=0.000000))
-        ego_start_pose = carla.Transform(carla.Location(x=-7.53, y=270.0, z=0.3), carla.Rotation(pitch=0.000000, yaw=-90.0, roll=0.000000))
+        stationary_start_pose = carla.Transform(carla.Location(x=-7.53, y=170.0, z=0.3), carla.Rotation(pitch=0.0, yaw=-90.0, roll=0.0))
+        ego_start_pose = carla.Transform(carla.Location(x=-7.53, y=270.0, z=0.3), carla.Rotation(pitch=0.0, yaw=-90.0, roll=0.0))
 
         blueprint_library = world.get_blueprint_library()
 
@@ -44,11 +45,6 @@ def main():
         sensor_front.set_attribute('image_size_y', str(VIEW_HEIGHT))
         sensor_front.set_attribute('fov', str(VIEW_FOV))
 
-        calibration = np.identity(3)
-        calibration[0, 2] = VIEW_WIDTH / 2.0
-        calibration[1, 2] = VIEW_HEIGHT / 2.0
-        calibration[0, 0] = calibration[1, 1] = VIEW_WIDTH / (2.0 * np.tan(VIEW_FOV * np.pi / 360.0))
-
         camera_x_offset = ego_vehicle_dimensions[0] / 2 
         camera_y_offset = ego_vehicle_dimensions[1] / 2 
         camera_z_offset = ego_vehicle_dimensions[2] / 2 
@@ -57,15 +53,13 @@ def main():
             sensor_front,
             carla.Transform(carla.Location(x=camera_x_offset, y=camera_y_offset, z=camera_z_offset), carla.Rotation(pitch=0, yaw=0, roll=0)),
             attach_to=ego_vehicle)
-        
-        camera_front.calibration = calibration
 
         actor_list.append(stationary_vehicle)
         actor_list.append(ego_vehicle)
         actor_list.append(camera_front)
 
         state = Dynamics(ego_vehicle, dt=(1/20))
-        visualizer = Visualizer()
+        visualizer = Visualizer(camera_front, sensor_front)
 
         desired_range = 1.0
 
@@ -80,11 +74,11 @@ def main():
                 _, image_front = sync_mode.tick(timeout=2.0)
 
                 # get the range between the two vehicles
-                range = RangeEstimator.naive_range_estimator(ego_vehicle, stationary_vehicle)
+                dist = RangeEstimator.naive_range_estimator(ego_vehicle, stationary_vehicle)
 
                 # calculate the control signal
                 speed = np.linalg.norm([state.get_velocity(ego_vehicle).x, state.get_velocity(ego_vehicle).y, state.get_velocity(ego_vehicle).z])
-                control = Controller.range_controller(range, speed, desired_range, kt_p=0.55, kt_d=0.01, kb_p=0.68)
+                control = Controller.range_controller(dist, speed, desired_range, kt_p=0.55, kt_d=0.01, kb_p=0.68)
 
                 # Apply the control signal to the ego vehicle
                 ego_vehicle.apply_control(control)
@@ -96,10 +90,11 @@ def main():
                 jerk = state.get_jerk(ego_vehicle)
 
                 # Draw the display.
-                visualizer.draw_image(image_front)
+                img = np.reshape(np.copy(image_front.raw_data), (image_front.height, image_front.width, 4))
+                visualizer.draw_bbox(img, ego_vehicle, stationary_vehicle, dist)
                 pygame.display.flip()
 
-                print(range)
+                print(dist)
 
     finally:
 
@@ -108,6 +103,7 @@ def main():
             actor.destroy()
 
         pygame.quit()
+        cv2.destroyAllWindows()
         print('done.')
 
 

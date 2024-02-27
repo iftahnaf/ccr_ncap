@@ -120,17 +120,12 @@ class CarlaSyncMode(object):
     
     @staticmethod
     def save_data_to_csv(velocity, acceleration, jerk, relative_distance, bbox, filename):
-        # this method append the data to the csv file at each time step
         with open(filename, 'a') as f:
             f.write(f"{velocity.x}, {velocity.y}, {velocity.z}, {acceleration.x}, {acceleration.y}, {acceleration.z}, {jerk[0]}, {jerk[1]}, {jerk[2]}, {relative_distance}, {bbox}\n")
 
     @staticmethod
     def get_vehicle_dimensions(blueprint):
-
-        # Get the bounding box of the vehicle blueprint
         bounding_box = blueprint.bounding_box.extent
-
-        # Extract dimensions (length, width, height) from the bounding box
         length = 2 * bounding_box.x
         width = 2 * bounding_box.y
         height = 2 * bounding_box.z

@@ -17,7 +17,7 @@ BB_COLOR = (248, 64, 24)
 
 
 class Visualizer:
-    def __init__(self):
+    def __init__(self, camera, camera_bp):
         pygame.init()
     
         self.display = pygame.display.set_mode(
@@ -25,6 +25,15 @@ class Visualizer:
             pygame.HWSURFACE | pygame.DOUBLEBUF)
     
         self.clock = pygame.time.Clock()
+        self.world_2_camera = np.array(camera.get_transform().get_inverse_matrix())
+
+        # Get the attributes from the camera
+        image_w = camera_bp.get_attribute("image_size_x").as_int()
+        image_h = camera_bp.get_attribute("image_size_y").as_int()
+        fov = camera_bp.get_attribute("fov").as_float()
+
+        # Calculate the camera projection matrix to project from 3D -> 2D
+        self.K = self.build_projection_matrix(image_w, image_h, fov)
 
     def draw_image(self, image, blend=False):
         array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
@@ -36,174 +45,81 @@ class Visualizer:
             image_surface.set_alpha(100)
         self.display.blit(image_surface, (0, 0))
 
+    @staticmethod
+    def build_projection_matrix(w, h, fov):
+        focal = w / (2.0 * np.tan(fov * np.pi / 360.0))
+        K = np.identity(3)
+        K[0, 0] = K[1, 1] = focal
+        K[0, 2] = w / 2.0
+        K[1, 2] = h / 2.0
+        return K
+    
+    @staticmethod
+    def get_image_point(loc, K, w2c):
+        # Calculate 2D projection of 3D coordinate
+
+        # Format the input coordinate (loc is a carla.Position object)
+        point = np.array([loc.x, loc.y, loc.z, 1])
+        # transform to camera coordinates
+        point_camera = np.dot(w2c, point)
+
+        # New we must change from UE4's coordinate system to an "standard"
+        # (x, y ,z) -> (y, -z, x)
+        # and we remove the fourth componebonent also
+        point_camera = [point_camera[1], -point_camera[2], point_camera[0]]
+
+        # now project 3D->2D using the camera matrix
+        point_img = np.dot(K, point_camera)
+        # normalize
+        point_img[0] /= point_img[2]
+        point_img[1] /= point_img[2]
+
+        return point_img[0:2]
+    
+    def draw_bbox(self, img, ego_vehicle, stationary_vehicle, dist):
+        bb = stationary_vehicle.bounding_box
+
+        # Filter for the vehicles within 50m
+        if dist < 100:
+
+        # Calculate the dot product between the forward vector
+        # of the vehicle and the vector between the vehicle
+        # and the other vehicle. We threshold this dot product
+        # to limit to drawing bounding boxes IN FRONT OF THE CAMERA
+            forward_vec = ego_vehicle.get_transform().get_forward_vector()
+            ray = stationary_vehicle.get_transform().location - ego_vehicle.get_transform().location
+
+            if forward_vec.dot(ray) > 1:
+                p1 = self.get_image_point(bb.location, self.K, self.world_2_camera) # http://host.robots.ox.ac.uk/pascal/VOC/
+                verts = [v for v in bb.get_world_vertices(stationary_vehicle.get_transform())]
+                x_max = -10000
+                x_min = 10000
+                y_max = -10000
+                y_min = 10000
+
+                for vert in verts:
+                    p = self.get_image_point(vert, self.K, self.world_2_camera)
+                    # Find the rightmost vertex
+                    if p[0] > x_max:
+                        x_max = p[0]
+                    # Find the leftmost vertex
+                    if p[0] < x_min:
+                        x_min = p[0]
+                    # Find the highest vertex
+                    if p[1] > y_max:
+                        y_max = p[1]
+                    # Find the lowest  vertex
+                    if p[1] < y_min:
+                        y_min = p[1]
+
+                cv2.line(img, (int(x_min),int(y_min)), (int(x_max),int(y_min)), (0,0,255, 255), 1)
+                cv2.line(img, (int(x_min),int(y_max)), (int(x_max),int(y_max)), (0,0,255, 255), 1)
+                cv2.line(img, (int(x_min),int(y_min)), (int(x_min),int(y_max)), (0,0,255, 255), 1)
+                cv2.line(img, (int(x_max),int(y_min)), (int(x_max),int(y_max)), (0,0,255, 255), 1)
+
+        cv2.imshow('ImageWindowName',img)
+        cv2.waitKey(1)
+
 
     # Bounding box docs: https://carla.readthedocs.io/en/latest/tuto_G_bounding_boxes/
-        
-    def find_bbox(self, image): 
-        # Convert the image to grayscale
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        # Apply Gaussian blur
-        blur = cv2.GaussianBlur(gray, (5, 5), 0)
-        # Apply Canny edge detection
-        edges = cv2.Canny(blur, 50, 150)
-        # Find contours
-        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        # Get the bounding box of the contour
-        for contour in contours:
-            area = cv2.contourArea(contour)
-            if area > 1000:
-                x, y, w, h = cv2.boundingRect(contour)
-                bbox = (x, y, w, h)
-                return bbox            
-        return (0, 0, 0, 0)
-
-    def bbox_image(self, image):
-        array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
-        array = np.reshape(array, (image.height, image.width, 4))
-        array = array[:, :, :3]
-        array = array[:, :, ::-1]
-        image_surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
-        bbox = self.find_bbox(array)
-        self.display.blit(image_surface, (0, 0))
-        pygame.draw.rect(self.display, (255, 0, 0), bbox, 2)
-
-class ClientSideBoundingBoxes(object):
-    """
-    This is a module responsible for creating 3D bounding boxes and drawing them
-    client-side on pygame surface.
-    """
-
-    @staticmethod
-    def get_bounding_boxes(vehicle, camera):
-        """
-        Creates 3D bounding boxes based on carla vehicle list and camera.
-        """
-
-        bounding_boxes = ClientSideBoundingBoxes.get_bounding_box(vehicle, camera)
-        # filter objects behind camera
-        bounding_boxes = [bb for bb in bounding_boxes if all(bb[:, 2] > 0)]
-        return bounding_boxes
-
-    @staticmethod
-    def draw_bounding_boxes(display, bounding_boxes):
-        """
-        Draws bounding boxes on pygame display.
-        """
-
-        bb_surface = pygame.Surface((VIEW_WIDTH, VIEW_HEIGHT))
-        bb_surface.set_colorkey((0, 0, 0))
-        for bbox in bounding_boxes:
-            points = [(int(bbox[i, 0]), int(bbox[i, 1])) for i in range(8)]
-            # draw lines
-            # base
-            pygame.draw.line(bb_surface, BB_COLOR, points[0], points[1])
-            pygame.draw.line(bb_surface, BB_COLOR, points[0], points[1])
-            pygame.draw.line(bb_surface, BB_COLOR, points[1], points[2])
-            pygame.draw.line(bb_surface, BB_COLOR, points[2], points[3])
-            pygame.draw.line(bb_surface, BB_COLOR, points[3], points[0])
-            # top
-            pygame.draw.line(bb_surface, BB_COLOR, points[4], points[5])
-            pygame.draw.line(bb_surface, BB_COLOR, points[5], points[6])
-            pygame.draw.line(bb_surface, BB_COLOR, points[6], points[7])
-            pygame.draw.line(bb_surface, BB_COLOR, points[7], points[4])
-            # base-top
-            pygame.draw.line(bb_surface, BB_COLOR, points[0], points[4])
-            pygame.draw.line(bb_surface, BB_COLOR, points[1], points[5])
-            pygame.draw.line(bb_surface, BB_COLOR, points[2], points[6])
-            pygame.draw.line(bb_surface, BB_COLOR, points[3], points[7])
-        display.blit(bb_surface, (0, 0))
-
-    @staticmethod
-    def get_bounding_box(vehicle, camera):
-        """
-        Returns 3D bounding box for a vehicle based on camera view.
-        """
-
-        bb_cords = ClientSideBoundingBoxes._create_bb_points(vehicle)
-        cords_x_y_z = ClientSideBoundingBoxes._vehicle_to_sensor(bb_cords, vehicle, camera)[:3, :]
-        cords_y_minus_z_x = np.concatenate([cords_x_y_z[1, :], -cords_x_y_z[2, :], cords_x_y_z[0, :]])
-        bbox = np.transpose(np.dot(camera.calibration, cords_y_minus_z_x))
-        camera_bbox = np.concatenate([bbox[:, 0] / bbox[:, 2], bbox[:, 1] / bbox[:, 2], bbox[:, 2]], axis=1)
-        return camera_bbox
-
-    @staticmethod
-    def _create_bb_points(vehicle):
-        """
-        Returns 3D bounding box for a vehicle.
-        """
-
-        cords = np.zeros((8, 4))
-        extent = vehicle.bounding_box.extent
-        cords[0, :] = np.array([extent.x, extent.y, -extent.z, 1])
-        cords[1, :] = np.array([-extent.x, extent.y, -extent.z, 1])
-        cords[2, :] = np.array([-extent.x, -extent.y, -extent.z, 1])
-        cords[3, :] = np.array([extent.x, -extent.y, -extent.z, 1])
-        cords[4, :] = np.array([extent.x, extent.y, extent.z, 1])
-        cords[5, :] = np.array([-extent.x, extent.y, extent.z, 1])
-        cords[6, :] = np.array([-extent.x, -extent.y, extent.z, 1])
-        cords[7, :] = np.array([extent.x, -extent.y, extent.z, 1])
-        return cords
-
-    @staticmethod
-    def _vehicle_to_sensor(cords, vehicle, sensor):
-        """
-        Transforms coordinates of a vehicle bounding box to sensor.
-        """
-
-        world_cord = ClientSideBoundingBoxes._vehicle_to_world(cords, vehicle)
-        sensor_cord = ClientSideBoundingBoxes._world_to_sensor(world_cord, sensor)
-        return sensor_cord
-
-    @staticmethod
-    def _vehicle_to_world(cords, vehicle):
-        """
-        Transforms coordinates of a vehicle bounding box to world.
-        """
-
-        bb_transform = carla.Transform(vehicle.bounding_box.location)
-        bb_vehicle_matrix = ClientSideBoundingBoxes.get_matrix(bb_transform)
-        vehicle_world_matrix = ClientSideBoundingBoxes.get_matrix(vehicle.get_transform())
-        bb_world_matrix = np.dot(vehicle_world_matrix, bb_vehicle_matrix)
-        world_cords = np.dot(bb_world_matrix, np.transpose(cords))
-        return world_cords
-
-    @staticmethod
-    def _world_to_sensor(cords, sensor):
-        """
-        Transforms world coordinates to sensor.
-        """
-
-        sensor_world_matrix = ClientSideBoundingBoxes.get_matrix(sensor.get_transform())
-        world_sensor_matrix = np.linalg.inv(sensor_world_matrix)
-        sensor_cords = np.dot(world_sensor_matrix, cords)
-        return sensor_cords
-
-    @staticmethod
-    def get_matrix(transform):
-        """
-        Creates matrix from carla transform.
-        """
-
-        rotation = transform.rotation
-        location = transform.location
-        c_y = np.cos(np.radians(rotation.yaw))
-        s_y = np.sin(np.radians(rotation.yaw))
-        c_r = np.cos(np.radians(rotation.roll))
-        s_r = np.sin(np.radians(rotation.roll))
-        c_p = np.cos(np.radians(rotation.pitch))
-        s_p = np.sin(np.radians(rotation.pitch))
-        matrix = np.matrix(np.identity(4))
-        matrix[0, 3] = location.x
-        matrix[1, 3] = location.y
-        matrix[2, 3] = location.z
-        matrix[0, 0] = c_p * c_y
-        matrix[0, 1] = c_y * s_p * s_r - s_y * c_r
-        matrix[0, 2] = -c_y * s_p * c_r - s_y * s_r
-        matrix[1, 0] = s_y * c_p
-        matrix[1, 1] = s_y * s_p * s_r + c_y * c_r
-        matrix[1, 2] = -s_y * s_p * c_r + c_y * s_r
-        matrix[2, 0] = s_p
-        matrix[2, 1] = -c_p * s_r
-        matrix[2, 2] = c_p * c_r
-        return matrix
-
+ 
