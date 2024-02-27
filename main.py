@@ -9,15 +9,15 @@ from controller import Controller
 from estimator import RangeEstimator
 from visualizer import Visualizer
 
-VIEW_WIDTH = 1920//2
-VIEW_HEIGHT = 1080//2
-VIEW_FOV = 90
+VIEW_WIDTH = 1920
+VIEW_HEIGHT = 1080
+VIEW_FOV = 100
 
 def main():
     actor_list = []
 
     client = carla.Client('localhost', 2000)
-    client.set_timeout(2.0)
+    client.set_timeout(5.0)
 
     world = client.load_world('/Game/Carla/Maps/Town02')
     world = client.get_world()
@@ -78,7 +78,7 @@ def main():
 
                 # calculate the control signal
                 speed = np.linalg.norm([state.get_velocity(ego_vehicle).x, state.get_velocity(ego_vehicle).y, state.get_velocity(ego_vehicle).z])
-                control = Controller.range_controller(dist, speed, desired_range, kt_p=0.55, kt_d=0.01, kb_p=0.68)
+                control = Controller.range_controller(dist, speed, desired_range, kt_p=0.56, kt_d=0.01, kb_p=0.72)
 
                 # Apply the control signal to the ego vehicle
                 ego_vehicle.apply_control(control)
@@ -91,7 +91,7 @@ def main():
 
                 # Draw the display.
                 img = np.reshape(np.copy(image_front.raw_data), (image_front.height, image_front.width, 4))
-                visualizer.draw_bbox(img, ego_vehicle, stationary_vehicle, dist)
+                visualizer.draw_bbox(img, world, ego_vehicle)
                 pygame.display.flip()
 
                 print(dist)

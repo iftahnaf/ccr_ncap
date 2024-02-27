@@ -19,6 +19,8 @@ BB_COLOR = (248, 64, 24)
 class Visualizer:
     def __init__(self, camera, camera_bp):
         pygame.init()
+
+        self.camera = camera
     
         self.display = pygame.display.set_mode(
             (640, 480),
@@ -26,7 +28,7 @@ class Visualizer:
     
         self.clock = pygame.time.Clock()
         self.world_2_camera = np.array(camera.get_transform().get_inverse_matrix())
-
+        
         # Get the attributes from the camera
         image_w = camera_bp.get_attribute("image_size_x").as_int()
         image_h = camera_bp.get_attribute("image_size_y").as_int()
@@ -76,46 +78,55 @@ class Visualizer:
 
         return point_img[0:2]
     
-    def draw_bbox(self, img, ego_vehicle, stationary_vehicle, dist):
-        bb = stationary_vehicle.bounding_box
+    def draw_bbox(self, img, world, vehicle):
+        world_2_camera = np.array(self.camera.get_transform().get_inverse_matrix())
 
-        # Filter for the vehicles within 50m
-        if dist < 100:
+        for npc in world.get_actors().filter('*vehicle*'):
 
-        # Calculate the dot product between the forward vector
-        # of the vehicle and the vector between the vehicle
-        # and the other vehicle. We threshold this dot product
-        # to limit to drawing bounding boxes IN FRONT OF THE CAMERA
-            forward_vec = ego_vehicle.get_transform().get_forward_vector()
-            ray = stationary_vehicle.get_transform().location - ego_vehicle.get_transform().location
+            # Filter out the ego vehicle
+            if npc.id != vehicle.id:
 
-            if forward_vec.dot(ray) > 1:
-                p1 = self.get_image_point(bb.location, self.K, self.world_2_camera) # http://host.robots.ox.ac.uk/pascal/VOC/
-                verts = [v for v in bb.get_world_vertices(stationary_vehicle.get_transform())]
-                x_max = -10000
-                x_min = 10000
-                y_max = -10000
-                y_min = 10000
+                bb = npc.bounding_box
+                dist = npc.get_transform().location.distance(vehicle.get_transform().location)
 
-                for vert in verts:
-                    p = self.get_image_point(vert, self.K, self.world_2_camera)
-                    # Find the rightmost vertex
-                    if p[0] > x_max:
-                        x_max = p[0]
-                    # Find the leftmost vertex
-                    if p[0] < x_min:
-                        x_min = p[0]
-                    # Find the highest vertex
-                    if p[1] > y_max:
-                        y_max = p[1]
-                    # Find the lowest  vertex
-                    if p[1] < y_min:
-                        y_min = p[1]
+                # Filter for the vehicles within 50m
+                if dist < 100.0:
 
-                cv2.line(img, (int(x_min),int(y_min)), (int(x_max),int(y_min)), (0,0,255, 255), 1)
-                cv2.line(img, (int(x_min),int(y_max)), (int(x_max),int(y_max)), (0,0,255, 255), 1)
-                cv2.line(img, (int(x_min),int(y_min)), (int(x_min),int(y_max)), (0,0,255, 255), 1)
-                cv2.line(img, (int(x_max),int(y_min)), (int(x_max),int(y_max)), (0,0,255, 255), 1)
+                # Calculate the dot product between the forward vector
+                # of the vehicle and the vector between the vehicle
+                # and the other vehicle. We threshold this dot product
+                # to limit to drawing bounding boxes IN FRONT OF THE CAMERA
+                    forward_vec = vehicle.get_transform().get_forward_vector()
+                    ray = npc.get_transform().location - vehicle.get_transform().location
+
+                    if forward_vec.dot(ray) > 1:
+                        p1 = self.get_image_point(bb.location, self.K, world_2_camera) #http://host.robots.ox.ac.uk/pascal/VOC/
+                        verts = [v for v in bb.get_world_vertices(npc.get_transform())]
+                        x_max = -10000
+                        x_min = 10000
+                        y_max = -10000
+                        y_min = 10000
+
+                        for vert in verts:
+                            p = self.get_image_point(vert, self.K, world_2_camera)
+                            # Find the rightmost vertex
+                            if p[0] > x_max:
+                                x_max = p[0]
+                            # Find the leftmost vertex
+                            if p[0] < x_min:
+                                x_min = p[0]
+                            # Find the highest vertex
+                            if p[1] > y_max:
+                                y_max = p[1]
+                            # Find the lowest  vertex
+                            if p[1] < y_min:
+                                y_min = p[1]
+
+                        cv2.line(img, (int(x_min),int(y_min)), (int(x_max),int(y_min)), (0,0,255, 255), 1)
+                        cv2.line(img, (int(x_min),int(y_max)), (int(x_max),int(y_max)), (0,0,255, 255), 1)
+                        cv2.line(img, (int(x_min),int(y_min)), (int(x_min),int(y_max)), (0,0,255, 255), 1)
+                        cv2.line(img, (int(x_max),int(y_min)), (int(x_max),int(y_max)), (0,0,255, 255), 1)
+
 
         cv2.imshow('ImageWindowName',img)
         cv2.waitKey(1)
