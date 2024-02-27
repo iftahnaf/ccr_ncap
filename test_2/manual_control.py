@@ -665,18 +665,18 @@ class KeyboardControl(object):
 # based on https://github.com/carla-simulator/carla/issues/1254 and https://carla.readthedocs.io/en/latest/python_api/#carla.Waypoint
 
 class LaneDetector(object):
-    def __init__(self, world, current_map, vehicle, camera, camera_bp):
-        self.world = world
-        self.vehicle = vehicle
-        self.map = current_map
-        self.camera = camera
+    def __init__(self, world):
+        self.world = world.world
+        self.vehicle = world.player
+        self.map = self.world.get_map()
+        # self.camera = camera
 
-        self.image_w = camera_bp.get_attribute("image_size_x").as_int()
-        self.image_h = camera_bp.get_attribute("image_size_y").as_int()
-        self.fov = camera_bp.get_attribute("fov").as_float()
+        # self.image_w = camera_bp.get_attribute("image_size_x").as_int()
+        # self.image_h = camera_bp.get_attribute("image_size_y").as_int()
+        # self.fov = camera_bp.get_attribute("fov").as_float()
 
-        self.K = self.build_projection_matrix(self.image_w, self.image_h, self.fov)
-        self.world_2_camera = np.array(self.camera.get_transform().get_inverse_matrix())
+        # self.K = self.build_projection_matrix(self.image_w, self.image_h, self.fov)
+        # self.world_2_camera = np.array(self.camera.get_transform().get_inverse_matrix())
 
     def detect(self):        
         location = self.vehicle.get_location()
@@ -685,13 +685,18 @@ class LaneDetector(object):
         left_lane_waypoint =  nearest_waypoint.get_left_lane()
         right_lane_waypoint = nearest_waypoint.get_right_lane()
 
-        left_lane_location = left_lane_waypoint.transform.location
-        right_lane_location = right_lane_waypoint.transform.location
+        try:
+            left_lane_location = left_lane_waypoint.transform.location
+            right_lane_location = right_lane_waypoint.transform.location
+        except Exception as e:
+            if "'NoneType' object has no attribute 'transform'" in str(e):
+                return
 
-        left_lane_point = self.get_image_point(left_lane_location, self.K, self.world_2_camera)
-        right_lane_point = self.get_image_point(right_lane_location, self.K, self.world_2_camera)
 
-        print(left_lane_point, right_lane_point)
+        # left_lane_point = self.get_image_point(left_lane_location, self.K, self.world_2_camera)
+        # right_lane_point = self.get_image_point(right_lane_location, self.K, self.world_2_camera)
+
+        print(left_lane_location, right_lane_location)
 
         # return left_lane_point, right_lane_point
 
@@ -725,8 +730,6 @@ class LaneDetector(object):
         K[0, 2] = w / 2.0
         K[1, 2] = h / 2.0
         return K
-
-
 
 
 # ==============================================================================
@@ -1256,8 +1259,9 @@ class CameraManager(object):
     def render(self, display):
         if self.surface is not None:
             display.blit(self.surface, (0, 0)) # self.surface is the image from camera sensor
-            if self.lane_detector_image  is not None:
-                LaneDetector.detect_lanes(self.lane_detector_image)
+            lane_detector.detect()
+            # if self.lane_detector_image  is not None: ################# Iftach addition here
+            #     LaneDetector.detect_lanes(self.lane_detector_image)
 
     @staticmethod
     def _parse_image(weak_self, image):
@@ -1315,6 +1319,7 @@ def game_loop(args):
     pygame.font.init()
     world = None
     original_settings = None
+    global lane_detector
 
     try:
         client = carla.Client(args.host, args.port)
@@ -1345,6 +1350,8 @@ def game_loop(args):
         hud = HUD(args.width, args.height)
         world = World(sim_world, hud, args)
         controller = KeyboardControl(world, args.autopilot)
+        
+        lane_detector = LaneDetector(world)
 
         if args.sync:
             sim_world.tick()
