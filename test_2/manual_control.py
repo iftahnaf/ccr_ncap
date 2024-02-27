@@ -143,6 +143,8 @@ try:
 except ImportError:
     raise RuntimeError('cannot import numpy, make sure numpy package is installed')
 
+from lane_detector import LaneDetector
+import cv2
 
 # ==============================================================================
 # -- Global functions ----------------------------------------------------------
@@ -1184,7 +1186,9 @@ class CameraManager(object):
 
     def render(self, display):
         if self.surface is not None:
-            display.blit(self.surface, (0, 0))
+            display.blit(self.surface, (0, 0)) # self.surface is the image from camera sensor
+            if self.lane_detector_image  is not None:
+                LaneDetector.detect_lanes(self.lane_detector_image)
 
     @staticmethod
     def _parse_image(weak_self, image):
@@ -1227,6 +1231,7 @@ class CameraManager(object):
             array = array[:, :, :3]
             array = array[:, :, ::-1]
             self.surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
+            self.lane_detector_image = np.reshape(np.copy(image.raw_data), (image.height, image.width, 4))
         if self.recording:
             image.save_to_disk('_out/%08d' % image.frame)
 
@@ -1300,6 +1305,7 @@ def game_loop(args):
             world.destroy()
 
         pygame.quit()
+        cv2.destroyAllWindows()
 
 
 # ==============================================================================
