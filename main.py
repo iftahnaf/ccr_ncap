@@ -29,11 +29,11 @@ def main():
         blueprint_library = world.get_blueprint_library()
 
         # Spawn the stationary vehicle
-        stationary_vehicle, _ = CarlaSyncMode.spawn_vehicle(world, 'vehicle.tesla.model3', stationary_start_pose)
+        stationary_vehicle = CarlaSyncMode.spawn_vehicle(world, 'vehicle.tesla.model3', stationary_start_pose)
         stationary_vehicle.set_simulate_physics(False)
 
         # Spawn the controllable vehicle
-        ego_vehicle, ego_vehicle_blueprint = CarlaSyncMode.spawn_vehicle(world, 'vehicle.bmw.grandtourer', ego_start_pose)
+        ego_vehicle = CarlaSyncMode.spawn_vehicle(world, 'vehicle.bmw.grandtourer', ego_start_pose)
         ego_vehicle.set_simulate_physics(True)
 
         # get the dimensions of the ego vehicle
@@ -83,18 +83,18 @@ def main():
                 # Apply the control signal to the ego vehicle
                 ego_vehicle.apply_control(control)
 
-                # get the state of the ego vehicle
-                position = state.get_positon(ego_vehicle)
-                velocity = state.get_velocity(ego_vehicle)
-                acceleration = state.get_acceleration(ego_vehicle)
-                jerk = state.get_jerk(ego_vehicle)
-
                 # Draw the display.
                 img = np.reshape(np.copy(image_front.raw_data), (image_front.height, image_front.width, 4))
                 visualizer.draw_bbox(img, world, ego_vehicle)
-                pygame.display.flip()
 
-                print(dist)
+                # log the necessary data
+                velocity = state.get_velocity(ego_vehicle)
+                acceleration = state.get_acceleration(ego_vehicle)
+                verdicts = visualizer.get_bbox_vertices()
+                jerk = state.get_jerk(ego_vehicle)
+                CarlaSyncMode.save_data_to_csv(velocity, acceleration, jerk, dist, verdicts, 'data.csv')
+
+                pygame.display.flip()
 
     finally:
 

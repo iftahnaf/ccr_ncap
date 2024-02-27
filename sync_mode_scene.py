@@ -101,7 +101,7 @@ class CarlaSyncMode(object):
     def spawn_vehicle(world, blueprint_name, transform):
         blueprint = world.get_blueprint_library().find(blueprint_name)
         vehicle = world.spawn_actor(blueprint, transform)
-        return vehicle, blueprint
+        return vehicle
     
     @staticmethod
     def remove_all_actors(world):
@@ -120,8 +120,12 @@ class CarlaSyncMode(object):
     
     @staticmethod
     def save_data_to_csv(velocity, acceleration, jerk, relative_distance, bbox, filename):
+        header = "velocity_x,velocity_y,velocity_z,acceleration_x,acceleration_y,acceleration_z,jerk_x,jerk_y,jerk_z,relative_distance,bbox_verdicts\n"
+        if not os.path.exists(filename) or os.path.getsize(filename) == 0:
+            with open(filename, 'w') as f:
+                f.write(header)
         with open(filename, 'a') as f:
-            f.write(f"{velocity.x}, {velocity.y}, {velocity.z}, {acceleration.x}, {acceleration.y}, {acceleration.z}, {jerk[0]}, {jerk[1]}, {jerk[2]}, {relative_distance}, {bbox}\n")
+            f.write(f"{velocity.x},{velocity.y},{velocity.z},{acceleration.x},{acceleration.y},{acceleration.z},{jerk[0]},{jerk[1]},{jerk[2]},{relative_distance},{bbox}\n")
 
     @staticmethod
     def get_vehicle_dimensions(blueprint):

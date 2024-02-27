@@ -100,37 +100,47 @@ class Visualizer:
                     ray = npc.get_transform().location - vehicle.get_transform().location
 
                     if forward_vec.dot(ray) > 1:
-                        p1 = self.get_image_point(bb.location, self.K, world_2_camera) #http://host.robots.ox.ac.uk/pascal/VOC/
+                        # p1 = self.get_image_point(bb.location, self.K, world_2_camera) #http://host.robots.ox.ac.uk/pascal/VOC/
                         verts = [v for v in bb.get_world_vertices(npc.get_transform())]
-                        x_max = -10000
-                        x_min = 10000
-                        y_max = -10000
-                        y_min = 10000
+                        self.x_max = -10000
+                        self.x_min = 10000
+                        self.y_max = -10000
+                        self.y_min = 10000
 
                         for vert in verts:
                             p = self.get_image_point(vert, self.K, world_2_camera)
                             # Find the rightmost vertex
-                            if p[0] > x_max:
-                                x_max = p[0]
+                            if p[0] > self.x_max:
+                                self.x_max = p[0]
                             # Find the leftmost vertex
-                            if p[0] < x_min:
-                                x_min = p[0]
+                            if p[0] < self.x_min:
+                                self.x_min = p[0]
                             # Find the highest vertex
-                            if p[1] > y_max:
-                                y_max = p[1]
+                            if p[1] > self.y_max:
+                                self.y_max = p[1]
                             # Find the lowest  vertex
-                            if p[1] < y_min:
-                                y_min = p[1]
+                            if p[1] < self.y_min:
+                                self.y_min = p[1]
 
-                        cv2.line(img, (int(x_min),int(y_min)), (int(x_max),int(y_min)), (0,0,255, 255), 1)
-                        cv2.line(img, (int(x_min),int(y_max)), (int(x_max),int(y_max)), (0,0,255, 255), 1)
-                        cv2.line(img, (int(x_min),int(y_min)), (int(x_min),int(y_max)), (0,0,255, 255), 1)
-                        cv2.line(img, (int(x_max),int(y_min)), (int(x_max),int(y_max)), (0,0,255, 255), 1)
+                        cv2.line(img, (int(self.x_min),int(self.y_min)), (int(self.x_max),int(self.y_min)), (0,0,255, 255), 1)
+                        cv2.line(img, (int(self.x_min),int(self.y_max)), (int(self.x_max),int(self.y_max)), (0,0,255, 255), 1)
+                        cv2.line(img, (int(self.x_min),int(self.y_min)), (int(self.x_min),int(self.y_max)), (0,0,255, 255), 1)
+                        cv2.line(img, (int(self.x_max),int(self.y_min)), (int(self.x_max),int(self.y_max)), (0,0,255, 255), 1)
 
 
         cv2.imshow('ImageWindowName',img)
         cv2.waitKey(1)
 
+    def get_bbox_vertices(self):
+        try:
+            v1 = [self.x_min, self.y_min]
+            v2 = [self.x_max, self.y_min]
+            v3 = [self.x_max, self.y_max]
+            v4 = [self.x_min, self.y_max]
+        except Exception as e:
+            if "has no attribute 'x_min'" in str(e):
+                return [[0,0], [0,0], [0,0], [0,0]]
+        return [v1, v2, v3, v4]
 
     # Bounding box docs: https://carla.readthedocs.io/en/latest/tuto_G_bounding_boxes/
  
