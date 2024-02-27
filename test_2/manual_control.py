@@ -669,16 +669,19 @@ class LaneDetector(object):
         self.world = world.world
         self.vehicle = world.player
         self.map = self.world.get_map()
-        # self.camera = camera
 
-        # self.image_w = camera_bp.get_attribute("image_size_x").as_int()
-        # self.image_h = camera_bp.get_attribute("image_size_y").as_int()
-        # self.fov = camera_bp.get_attribute("fov").as_float()
+        self.image_w = 1200
+        self.image_h = 920
+        self.fov = 90.0
 
-        # self.K = self.build_projection_matrix(self.image_w, self.image_h, self.fov)
-        # self.world_2_camera = np.array(self.camera.get_transform().get_inverse_matrix())
+        self.K = self.build_projection_matrix(self.image_w, self.image_h, self.fov)
 
-    def detect(self):        
+        # get the rgb camera sensor
+        self.camera = None
+        
+    def detect(self, camera):
+        self.world_2_camera = np.array(camera.get_transform().get_inverse_matrix())
+
         location = self.vehicle.get_location()
         nearest_waypoint = self.map.get_waypoint(location, project_to_road=True)
 
@@ -691,12 +694,11 @@ class LaneDetector(object):
         except Exception as e:
             if "'NoneType' object has no attribute 'transform'" in str(e):
                 return
+            
+        left_lane_point = self.get_image_point(left_lane_location, self.K, self.world_2_camera)
+        right_lane_point = self.get_image_point(right_lane_location, self.K, self.world_2_camera)
 
-
-        # left_lane_point = self.get_image_point(left_lane_location, self.K, self.world_2_camera)
-        # right_lane_point = self.get_image_point(right_lane_location, self.K, self.world_2_camera)
-
-        print(left_lane_location, right_lane_location)
+        print(left_lane_point, right_lane_point)
 
         # return left_lane_point, right_lane_point
 
@@ -1259,7 +1261,7 @@ class CameraManager(object):
     def render(self, display):
         if self.surface is not None:
             display.blit(self.surface, (0, 0)) # self.surface is the image from camera sensor
-            lane_detector.detect()
+            lane_detector.detect(self.sensor)
             # if self.lane_detector_image  is not None: ################# Iftach addition here
             #     LaneDetector.detect_lanes(self.lane_detector_image)
 
@@ -1350,7 +1352,6 @@ def game_loop(args):
         hud = HUD(args.width, args.height)
         world = World(sim_world, hud, args)
         controller = KeyboardControl(world, args.autopilot)
-        
         lane_detector = LaneDetector(world)
 
         if args.sync:
