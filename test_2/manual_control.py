@@ -693,14 +693,15 @@ class LaneDetector(object):
             right_lane_location = right_lane_waypoint.transform.location
         except Exception as e:
             if "'NoneType' object has no attribute 'transform'" in str(e):
-                return
+                return (0, 0), (0, 0)
             
         left_lane_point = self.get_image_point(left_lane_location, self.K, self.world_2_camera)
         right_lane_point = self.get_image_point(right_lane_location, self.K, self.world_2_camera)
 
-        print(left_lane_point, right_lane_point)
+        left_lane_point_tuple = (int(left_lane_point[0]), int(left_lane_point[1]))
+        right_lane_point_tuple = (int(right_lane_point[0]), int(right_lane_point[1]))
 
-        # return left_lane_point, right_lane_point
+        return left_lane_point_tuple, right_lane_point_tuple
 
     @staticmethod
     def get_image_point(loc, K, w2c):
@@ -1261,9 +1262,16 @@ class CameraManager(object):
     def render(self, display):
         if self.surface is not None:
             display.blit(self.surface, (0, 0)) # self.surface is the image from camera sensor
-            lane_detector.detect(self.sensor)
-            # if self.lane_detector_image  is not None: ################# Iftach addition here
-            #     LaneDetector.detect_lanes(self.lane_detector_image)
+            left_lane_point, right_lane_point = lane_detector.detect(self.sensor)
+            if left_lane_point and right_lane_point:
+
+                lane_detector_image_cv2 = cv2.cvtColor(self.lane_detector_image, cv2.COLOR_RGB2BGR)
+                # Add circles to the image
+                cv2.circle(lane_detector_image_cv2, left_lane_point, 8, (255, 0, 0), -1)  
+                cv2.circle(lane_detector_image_cv2, right_lane_point, 8, (255, 0, 0), -1)  
+                # Display the modified image
+                cv2.imshow('Lane Detector', lane_detector_image_cv2)
+                cv2.waitKey(1)
 
     @staticmethod
     def _parse_image(weak_self, image):
