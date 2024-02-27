@@ -24,7 +24,7 @@ def main():
 
     try:
         stationary_start_pose = carla.Transform(carla.Location(x=-7.53, y=170.0, z=0.3), carla.Rotation(pitch=0.0, yaw=-90.0, roll=0.0))
-        ego_start_pose = carla.Transform(carla.Location(x=-7.53, y=270.0, z=0.3), carla.Rotation(pitch=0.0, yaw=-90.0, roll=0.0))
+        ego_start_pose = carla.Transform(carla.Location(x=-7.53, y=275.0, z=0.3), carla.Rotation(pitch=0.0, yaw=-90.0, roll=0.0))
 
         blueprint_library = world.get_blueprint_library()
 
@@ -79,14 +79,14 @@ def main():
 
                 # calculate the control signal
                 speed = np.linalg.norm([state.get_velocity(ego_vehicle).x, state.get_velocity(ego_vehicle).y, state.get_velocity(ego_vehicle).z])
-                control = Controller.range_controller(relative_distance, speed, desired_range, kt_p=0.56, kt_d=0.01, kb_p=0.72)
+                control = Controller.range_controller(relative_distance, speed, desired_range, kt_p=0.56, kt_d=0.015, kb_p=0.75)
 
                 # Apply the control signal to the ego vehicle
                 ego_vehicle.apply_control(control)
 
                 # Draw the display.
                 img = np.reshape(np.copy(image_front.raw_data), (image_front.height, image_front.width, 4))
-                visualizer.draw_bbox(img, world, ego_vehicle)
+                visualizer.draw_bbox(img, world, ego_vehicle, relative_distance)
 
                 # log the necessary data
                 velocity = state.get_velocity(ego_vehicle)
@@ -94,6 +94,8 @@ def main():
                 verdicts = visualizer.get_bbox_vertices()
                 jerk = state.get_jerk(ego_vehicle)
                 CarlaSyncMode.save_data_to_csv(velocity, acceleration, jerk, relative_distance, verdicts, 'data.csv')
+
+                print(relative_distance)
 
                 pygame.display.flip()
 

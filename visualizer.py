@@ -78,7 +78,7 @@ class Visualizer:
 
         return point_img[0:2]
     
-    def draw_bbox(self, img, world, vehicle):
+    def draw_bbox(self, img, world, vehicle, relative_distance):
         world_2_camera = np.array(self.camera.get_transform().get_inverse_matrix())
 
         for npc in world.get_actors().filter('*vehicle*'):
@@ -87,7 +87,7 @@ class Visualizer:
             if npc.id != vehicle.id:
 
                 bb = npc.bounding_box
-                dist = npc.get_transform().location.distance(vehicle.get_transform().location)
+                dist = relative_distance
 
                 # Filter for the vehicles within 50m
                 if dist < 100.0:
