@@ -36,8 +36,9 @@ def main():
         ego_vehicle = CarlaSyncMode.spawn_vehicle(world, 'vehicle.bmw.grandtourer', ego_start_pose)
         ego_vehicle.set_simulate_physics(True)
 
-        # get the dimensions of the ego vehicle
+        # get the dimensions of the vehicles
         ego_vehicle_dimensions = CarlaSyncMode.get_vehicle_dimensions(ego_vehicle)
+        stationary_vehicle_dimensions = CarlaSyncMode.get_vehicle_dimensions(stationary_vehicle)
 
         # Spawn the camera
         sensor_front = blueprint_library.find('sensor.camera.rgb')
@@ -74,11 +75,11 @@ def main():
                 _, image_front = sync_mode.tick(timeout=2.0)
 
                 # get the range between the two vehicles
-                dist = RangeEstimator.naive_range_estimator(ego_vehicle, stationary_vehicle)
+                relative_distance = RangeEstimator.naive_range_estimator(ego_vehicle, stationary_vehicle, ego_vehicle_dimensions, stationary_vehicle_dimensions)
 
                 # calculate the control signal
                 speed = np.linalg.norm([state.get_velocity(ego_vehicle).x, state.get_velocity(ego_vehicle).y, state.get_velocity(ego_vehicle).z])
-                control = Controller.range_controller(dist, speed, desired_range, kt_p=0.56, kt_d=0.01, kb_p=0.72)
+                control = Controller.range_controller(relative_distance, speed, desired_range, kt_p=0.56, kt_d=0.01, kb_p=0.72)
 
                 # Apply the control signal to the ego vehicle
                 ego_vehicle.apply_control(control)
@@ -92,7 +93,7 @@ def main():
                 acceleration = state.get_acceleration(ego_vehicle)
                 verdicts = visualizer.get_bbox_vertices()
                 jerk = state.get_jerk(ego_vehicle)
-                CarlaSyncMode.save_data_to_csv(velocity, acceleration, jerk, dist, verdicts, 'data.csv')
+                CarlaSyncMode.save_data_to_csv(velocity, acceleration, jerk, relative_distance, verdicts, 'data.csv')
 
                 pygame.display.flip()
 
