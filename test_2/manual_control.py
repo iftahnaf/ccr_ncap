@@ -669,9 +669,6 @@ class LaneDetector(object):
         self.world = world.world
         self.vehicle = world.player
         self.map = self.world.get_map()
-
-        # get the rgb camera sensor
-        self.camera = None
     
     def create_projection_utils(self, width, height, fov):
         self.image_w = width
@@ -682,6 +679,7 @@ class LaneDetector(object):
         
     def detect(self, camera):
         self.world_2_camera = np.array(camera.get_transform().get_inverse_matrix())
+
         location = self.vehicle.get_location()
         nearest_waypoint = self.map.get_waypoint(location, project_to_road=True)
 
@@ -698,10 +696,7 @@ class LaneDetector(object):
         left_lane_point = self.get_image_point(left_lane_location, self.K, self.world_2_camera)
         right_lane_point = self.get_image_point(right_lane_location, self.K, self.world_2_camera)
 
-        left_lane_point_tuple = (int(left_lane_point[0]), int(left_lane_point[1]))
-        right_lane_point_tuple = (int(right_lane_point[0]), int(right_lane_point[1]))
-
-        return left_lane_point_tuple, right_lane_point_tuple
+        return (int(left_lane_point[0]), int(left_lane_point[1])), (int(right_lane_point[0]), int(right_lane_point[1]))
 
     @staticmethod
     def get_image_point(loc, K, w2c):
@@ -733,7 +728,6 @@ class LaneDetector(object):
         K[0, 2] = w / 2.0
         K[1, 2] = h / 2.0
         return K
-
 
 # ==============================================================================
 # -- HUD -----------------------------------------------------------------------
@@ -1271,8 +1265,8 @@ class CameraManager(object):
             left_lane_point, right_lane_point = lane_detector.detect(self.sensor)
             if left_lane_point and right_lane_point:
                 # Draw circles on the Pygame surface
-                pygame.draw.circle(display, (255, 0, 0), left_lane_point, 8)  # Blue circle for left lane point
-                pygame.draw.circle(display, (255, 0, 0), right_lane_point, 8)  # Blue circle for right lane point
+                pygame.draw.circle(display, (0, 0, 255), left_lane_point, 8)  # Blue circle for left lane point
+                pygame.draw.circle(display, (0, 0, 255), right_lane_point, 8)  # Blue circle for right lane point
 
     @staticmethod
     def _parse_image(weak_self, image):
