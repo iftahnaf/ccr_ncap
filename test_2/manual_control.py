@@ -1270,14 +1270,9 @@ class CameraManager(object):
             lane_detector.create_projection_utils(self.sensor_width, self.sensor_height, self.sensor_fov)
             left_lane_point, right_lane_point = lane_detector.detect(self.sensor)
             if left_lane_point and right_lane_point:
-
-                lane_detector_image_cv2 = cv2.cvtColor(self.lane_detector_image, cv2.COLOR_RGB2BGR)
-                # Add circles to the image
-                cv2.circle(lane_detector_image_cv2, left_lane_point, 8, (255, 0, 0), -1)  
-                cv2.circle(lane_detector_image_cv2, right_lane_point, 8, (255, 0, 0), -1)  
-                # Display the modified image
-                cv2.imshow('Lane Detector', lane_detector_image_cv2)
-                cv2.waitKey(1)
+                # Draw circles on the Pygame surface
+                pygame.draw.circle(display, (255, 0, 0), left_lane_point, 8)  # Blue circle for left lane point
+                pygame.draw.circle(display, (255, 0, 0), right_lane_point, 8)  # Blue circle for right lane point
 
     @staticmethod
     def _parse_image(weak_self, image):
