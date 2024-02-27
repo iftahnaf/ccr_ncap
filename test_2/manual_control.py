@@ -744,8 +744,7 @@ class LaneDetector(object):
         K[1, 2] = h / 2.0
         return K
     
-    @staticmethod
-    def get_nearest_waypoints_same_lane(nearest_waypoint, all_waypoints, k=20):
+    def get_nearest_waypoints_same_lane(self, nearest_waypoint, all_waypoints, k=20):
         # Initialize a list to store distances and waypoints
         distances_and_waypoints = []
 
@@ -754,8 +753,14 @@ class LaneDetector(object):
             if waypoint.road_id == nearest_waypoint.road_id and waypoint.lane_id == nearest_waypoint.lane_id:
                 # Calculate distance between waypoints
                 distance = math.sqrt((waypoint.transform.location.x - nearest_waypoint.transform.location.x)**2 + (waypoint.transform.location.y - nearest_waypoint.transform.location.y)**2)
-                # Add distance and waypoint to the list
-                distances_and_waypoints.append((distance, waypoint))
+            # Calculate relative angle between vehicle heading and waypoint
+                angle_to_waypoint = math.atan2(waypoint.transform.location.y - self.vehicle.get_transform().location.y, waypoint.transform.location.x - self.vehicle.get_transform().location.x)
+                angle_difference = abs(self.vehicle.get_transform().rotation.yaw - angle_to_waypoint)
+                angle_difference = min(angle_difference, 2 * math.pi - angle_difference)  # Take the minimum angle difference
+
+                # Add distance and waypoint to the list if waypoint is in front of the vehicle
+                if angle_difference < math.pi / 2:  # 90 degrees angle threshold
+                    distances_and_waypoints.append((distance, waypoint))
 
         # Sort the list based on distances
         distances_and_waypoints.sort()
@@ -1300,8 +1305,11 @@ class CameraManager(object):
             if len(left_lane_points) > 0:
                 for left_lane_point, right_lane_point in zip(left_lane_points, right_lane_points):
                     # Draw circles on the Pygame surface
-                    pygame.draw.circle(display, (0, 0, 255), left_lane_point, 8)  # Blue circle for left lane point
-                    pygame.draw.circle(display, (0, 0, 255), right_lane_point, 8)  # Blue circle for right lane point
+                    try:
+                        pygame.draw.circle(display, (0, 0, 255), left_lane_point, 8)  # Blue circle for left lane point
+                        pygame.draw.circle(display, (0, 0, 255), right_lane_point, 8)  # Blue circle for right lane point
+                    except Exception:
+                        continue
 
     @staticmethod
     def _parse_image(weak_self, image):
