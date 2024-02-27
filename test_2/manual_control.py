@@ -670,18 +670,18 @@ class LaneDetector(object):
         self.vehicle = world.player
         self.map = self.world.get_map()
 
-        self.image_w = 1200
-        self.image_h = 920
-        self.fov = 90.0
-
-        self.K = self.build_projection_matrix(self.image_w, self.image_h, self.fov)
-
         # get the rgb camera sensor
         self.camera = None
+    
+    def create_projection_utils(self, width, height, fov):
+        self.image_w = width
+        self.image_h = height
+        self.fov = fov
+
+        self.K = self.build_projection_matrix(self.image_w, self.image_h, self.fov)
         
     def detect(self, camera):
         self.world_2_camera = np.array(camera.get_transform().get_inverse_matrix())
-
         location = self.vehicle.get_location()
         nearest_waypoint = self.map.get_waypoint(location, project_to_road=True)
 
@@ -1216,6 +1216,11 @@ class CameraManager(object):
                     bp.set_attribute('gamma', str(gamma_correction))
                 for attr_name, attr_value in item[3].items():
                     bp.set_attribute(attr_name, attr_value)
+
+                self.sensor_width = bp.get_attribute("image_size_x").as_int()
+                self.sensor_height = bp.get_attribute("image_size_y").as_int()
+                self.sensor_fov = bp.get_attribute("fov").as_float()
+
             elif item[0].startswith('sensor.lidar'):
                 self.lidar_range = 50
 
@@ -1262,6 +1267,7 @@ class CameraManager(object):
     def render(self, display):
         if self.surface is not None:
             display.blit(self.surface, (0, 0)) # self.surface is the image from camera sensor
+            lane_detector.create_projection_utils(self.sensor_width, self.sensor_height, self.sensor_fov)
             left_lane_point, right_lane_point = lane_detector.detect(self.sensor)
             if left_lane_point and right_lane_point:
 
