@@ -680,30 +680,38 @@ class LaneDetector(object):
     def detect(self, camera):
         self.world_2_camera = np.array(camera.get_transform().get_inverse_matrix())
 
+        left_lane_points = []
+        right_lane_points = []
+
         all_waypoints = self.map.generate_waypoints(distance=1.0)
 
         location = self.vehicle.get_location()
         nearest_waypoint = self.map.get_waypoint(location, project_to_road=True)
 
-        waypoint_on_map = self.get_nearest_waypoint_same_lane(nearest_waypoint, all_waypoints)
+        waypoints_on_map = self.get_nearest_waypoints_same_lane(nearest_waypoint, all_waypoints)
 
-        if waypoint_on_map is None:
+        if len(waypoints_on_map) == 0:
             return (0, 0), (0, 0)
+        
+        else:
+            for waypoint_on_map in waypoints_on_map:
+                left_lane_waypoint =  waypoint_on_map.get_left_lane()
+                right_lane_waypoint = waypoint_on_map.get_right_lane()
 
-        left_lane_waypoint =  waypoint_on_map.get_left_lane()
-        right_lane_waypoint = waypoint_on_map.get_right_lane()
+                try:
+                    left_lane_location = left_lane_waypoint.transform.location
+                    right_lane_location = right_lane_waypoint.transform.location
+                except Exception as e:
+                    if "'NoneType' object has no attribute 'transform'" in str(e):
+                        return (0, 0), (0, 0)
+                    
+                left_lane_point = self.get_image_point(left_lane_location, self.K, self.world_2_camera)
+                right_lane_point = self.get_image_point(right_lane_location, self.K, self.world_2_camera)
 
-        try:
-            left_lane_location = left_lane_waypoint.transform.location
-            right_lane_location = right_lane_waypoint.transform.location
-        except Exception as e:
-            if "'NoneType' object has no attribute 'transform'" in str(e):
-                return (0, 0), (0, 0)
-            
-        left_lane_point = self.get_image_point(left_lane_location, self.K, self.world_2_camera)
-        right_lane_point = self.get_image_point(right_lane_location, self.K, self.world_2_camera)
+                left_lane_points.append((int(left_lane_point[0]), int(left_lane_point[1])))
+                right_lane_points.append((int(right_lane_point[0]), int(right_lane_point[1])))
 
-        return (int(left_lane_point[0]), int(left_lane_point[1])), (int(right_lane_point[0]), int(right_lane_point[1]))
+        return left_lane_points, right_lane_points
 
     @staticmethod
     def get_image_point(loc, K, w2c):
@@ -737,21 +745,23 @@ class LaneDetector(object):
         return K
     
     @staticmethod
-    def get_nearest_waypoint_same_lane(nearest_waypoint, all_waypoints):
-        min_distance = float('inf')
-        closest_waypoint = None
+    def get_nearest_waypoints_same_lane(nearest_waypoint, all_waypoints, k=20):
+        # Initialize a list to store distances and waypoints
+        distances_and_waypoints = []
 
         for waypoint in all_waypoints:
             # Check if Road ID and Lane ID match
             if waypoint.road_id == nearest_waypoint.road_id and waypoint.lane_id == nearest_waypoint.lane_id:
                 # Calculate distance between waypoints
                 distance = math.sqrt((waypoint.transform.location.x - nearest_waypoint.transform.location.x)**2 + (waypoint.transform.location.y - nearest_waypoint.transform.location.y)**2)
-                # Update closest waypoint if this one is closer
-                if distance < min_distance:
-                    min_distance = distance
-                    closest_waypoint = waypoint
+                # Add distance and waypoint to the list
+                distances_and_waypoints.append((distance, waypoint))
 
-        return closest_waypoint
+        # Sort the list based on distances
+        distances_and_waypoints.sort()
+
+        # Return the first k waypoints (the nearest ones)
+        return [waypoint for (_, waypoint) in distances_and_waypoints[:k]]
 
 # ==============================================================================
 # -- HUD -----------------------------------------------------------------------
@@ -1286,11 +1296,12 @@ class CameraManager(object):
         if self.surface is not None:
             display.blit(self.surface, (0, 0)) # self.surface is the image from camera sensor
             lane_detector.create_projection_utils(self.sensor_width, self.sensor_height, self.sensor_fov)
-            left_lane_point, right_lane_point = lane_detector.detect(self.sensor)
-            if left_lane_point and right_lane_point:
-                # Draw circles on the Pygame surface
-                pygame.draw.circle(display, (0, 0, 255), left_lane_point, 8)  # Blue circle for left lane point
-                pygame.draw.circle(display, (0, 0, 255), right_lane_point, 8)  # Blue circle for right lane point
+            left_lane_points, right_lane_points = lane_detector.detect(self.sensor)
+            if len(left_lane_points) > 0:
+                for left_lane_point, right_lane_point in zip(left_lane_points, right_lane_points):
+                    # Draw circles on the Pygame surface
+                    pygame.draw.circle(display, (0, 0, 255), left_lane_point, 8)  # Blue circle for left lane point
+                    pygame.draw.circle(display, (0, 0, 255), right_lane_point, 8)  # Blue circle for right lane point
 
     @staticmethod
     def _parse_image(weak_self, image):
