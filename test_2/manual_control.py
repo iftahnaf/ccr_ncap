@@ -731,13 +731,10 @@ class LaneDetector(object):
         return K
     
     def get_nearest_waypoints_same_lane(self, nearest_waypoint, all_waypoints, k=20):
-        # Initialize a list to store distances and waypoints
         distances_and_waypoints = []
 
         for waypoint in all_waypoints:
-            # Check if Road ID and Lane ID match
             if waypoint.road_id == nearest_waypoint.road_id and waypoint.lane_id == nearest_waypoint.lane_id:
-                # Calculate distance between waypoints
                 distance = math.sqrt((waypoint.transform.location.x - nearest_waypoint.transform.location.x)**2 + (waypoint.transform.location.y - nearest_waypoint.transform.location.y)**2)
                 distances_and_waypoints.append((distance, waypoint))
 
