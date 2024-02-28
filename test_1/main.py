@@ -1,4 +1,3 @@
-import pygame
 import carla
 import cv2
 import numpy as np
@@ -8,10 +7,6 @@ from scene import Scene
 from controller import Controller
 from estimator import RangeEstimator
 from visualizer import Visualizer
-
-VIEW_WIDTH = 1920
-VIEW_HEIGHT = 1080
-VIEW_FOV = 100
 
 def main():
     actor_list = []
@@ -26,8 +21,6 @@ def main():
         stationary_start_pose = carla.Transform(carla.Location(x=-7.53, y=170.0, z=0.3), carla.Rotation(pitch=0.0, yaw=-90.0, roll=0.0))
         ego_start_pose = carla.Transform(carla.Location(x=-7.53, y=275.0, z=0.3), carla.Rotation(pitch=0.0, yaw=-90.0, roll=0.0))
 
-        blueprint_library = world.get_blueprint_library()
-
         # Spawn the stationary vehicle
         stationary_vehicle = Scene.spawn_vehicle(world, 'vehicle.tesla.model3', stationary_start_pose)
         stationary_vehicle.set_simulate_physics(False)
@@ -41,17 +34,7 @@ def main():
         stationary_vehicle_dimensions = Scene.get_vehicle_dimensions(stationary_vehicle)
 
         # Spawn the camera
-        sensor_front = blueprint_library.find('sensor.camera.rgb')
-        sensor_front.set_attribute('image_size_x', str(VIEW_WIDTH))
-        sensor_front.set_attribute('image_size_y', str(VIEW_HEIGHT))
-        sensor_front.set_attribute('fov', str(VIEW_FOV))
-
-        camera_offsets = [x/2 for x in ego_vehicle_dimensions]
-        
-        camera_front = world.spawn_actor(
-            sensor_front,
-            carla.Transform(carla.Location(x=camera_offsets[0], y=camera_offsets[1], z=camera_offsets[2]), carla.Rotation(pitch=0, yaw=0, roll=0)),
-            attach_to=ego_vehicle)
+        camera_front, sensor_front = Scene.spawn_camera(world, ego_vehicle, ego_vehicle_dimensions)
 
         actor_list.append(stationary_vehicle)
         actor_list.append(ego_vehicle)
@@ -94,25 +77,15 @@ def main():
                 Scene.save_data_to_csv(velocity, acceleration, jerk, relative_distance, verdicts, 'data.csv')
 
                 print(relative_distance)
-
-                pygame.display.flip()
-
     finally:
-
         print('destroying actors.')
         for actor in actor_list:
             actor.destroy()
-
-        pygame.quit()
         cv2.destroyAllWindows()
         print('done.')
 
-
 if __name__ == '__main__':
-
     try:
-
         main()
-
     except KeyboardInterrupt:
         print('\nCancelled by user. Bye!')

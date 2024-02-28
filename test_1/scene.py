@@ -18,15 +18,9 @@ try:
 except IndexError:
     pass
 
+import pygame
+
 import carla
-
-import random
-
-try:
-    import pygame
-except ImportError:
-    raise RuntimeError('cannot import pygame, make sure pygame package is installed')
-
 try:
     import numpy as np
 except ImportError:
@@ -88,14 +82,6 @@ class Scene(object):
             data = sensor_queue.get(timeout=timeout)
             if data.frame == self.frame:
                 return data
-
-    @staticmethod
-    def get_font():
-        fonts = [x for x in pygame.font.get_fonts()]
-        default_font = 'ubuntumono'
-        font = default_font if default_font in fonts else fonts[0]
-        font = pygame.font.match_font(font)
-        return pygame.font.Font(font, 14)
     
     @staticmethod
     def spawn_vehicle(world, blueprint_name, transform):
@@ -137,3 +123,19 @@ class Scene(object):
         dimensions = [length, width, height]
 
         return dimensions
+    
+    @staticmethod
+    def spawn_camera(world, ego_vehicle, ego_vehicle_dimensions, view_width=1920, view_height=1080, view_fov=90):
+        sensor_front = world.get_blueprint_library().find('sensor.camera.rgb')
+        sensor_front.set_attribute('image_size_x', str(view_width))
+        sensor_front.set_attribute('image_size_y', str(view_height))
+        sensor_front.set_attribute('fov', str(view_fov))
+
+        camera_offsets = [x/2 for x in ego_vehicle_dimensions]
+        
+        camera_front = world.spawn_actor(
+            sensor_front,
+            carla.Transform(carla.Location(x=camera_offsets[0], y=camera_offsets[1], z=camera_offsets[2]), carla.Rotation(pitch=0, yaw=0, roll=0)),
+            attach_to=ego_vehicle)
+        
+        return camera_front, sensor_front
