@@ -4,7 +4,7 @@ import numpy as np
 from matplotlib.animation import FuncAnimation
 
 SIMULATION_TIME_STEP = 0.05  # seconds
-filename = 'data.csv'
+filename = './test_1/data.csv'
 
 # Read data from CSV file
 
