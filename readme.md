@@ -45,10 +45,9 @@ Open two terminals.
 
 In the first terminal:
   
-                cd ccr_ncap/
-                python3 ./test_1/main.py
+                docker run --privileged --gpus all --net=host -e DISPLAY=$DISPLAY carlasim/carla:0.9.15 /bin/bash ./CarlaUE4.sh -RenderOffScreen
 
 In the second terminal:
 
-                docker run --privileged --gpus all --net=host -e DISPLAY=$DISPLAY carlasim/carla:0.9.15 /bin/bash ./CarlaUE4.sh -RenderOffScreen
-
+                dd ccr_ncap/
+                python3 ./test_1/main.py
