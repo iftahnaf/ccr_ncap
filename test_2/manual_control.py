@@ -143,8 +143,6 @@ try:
 except ImportError:
     raise RuntimeError('cannot import numpy, make sure numpy package is installed')
 
-import cv2
-
 # ==============================================================================
 # -- Global functions ----------------------------------------------------------
 # ==============================================================================
@@ -669,13 +667,8 @@ class LaneDetector(object):
         self.world = world.world
         self.vehicle = world.player
         self.map = self.world.get_map()
-    
-    def create_projection_utils(self, width, height, fov):
-        self.image_w = width
-        self.image_h = height
-        self.fov = fov
 
-        self.K = self.build_projection_matrix(self.image_w, self.image_h, self.fov)
+        self.K = self.build_projection_matrix(world.camera_manager.sensor_width, world.camera_manager.sensor_height, world.camera_manager.sensor_fov)
         
     def detect(self, camera):
         self.world_2_camera = np.array(camera.get_transform().get_inverse_matrix())
@@ -686,6 +679,7 @@ class LaneDetector(object):
         all_waypoints = self.map.generate_waypoints(distance=1.0)
 
         location = self.vehicle.get_location()
+
         nearest_waypoint = self.map.get_waypoint(location, project_to_road=True)
 
         waypoints_on_map = self.get_nearest_waypoints_same_lane(nearest_waypoint, all_waypoints)
@@ -704,7 +698,7 @@ class LaneDetector(object):
                 except Exception as e:
                     if "'NoneType' object has no attribute 'transform'" in str(e):
                         return (0, 0), (0, 0)
-                    
+                                        
                 left_lane_point = self.get_image_point(left_lane_location, self.K, self.world_2_camera)
                 right_lane_point = self.get_image_point(right_lane_location, self.K, self.world_2_camera)
 
@@ -715,21 +709,13 @@ class LaneDetector(object):
 
     @staticmethod
     def get_image_point(loc, K, w2c):
-        # Calculate 2D projection of 3D coordinate
-
-        # Format the input coordinate (loc is a carla.Position object)
         point = np.array([loc.x, loc.y, loc.z, 1])
-        # transform to camera coordinates
         point_camera = np.dot(w2c, point)
 
-        # New we must change from UE4's coordinate system to an "standard"
-        # (x, y ,z) -> (y, -z, x)
-        # and we remove the fourth componebonent also
         point_camera = [point_camera[1], -point_camera[2], point_camera[0]]
 
-        # now project 3D->2D using the camera matrix
         point_img = np.dot(K, point_camera)
-        # normalize
+
         point_img[0] /= point_img[2]
         point_img[1] /= point_img[2]
 
@@ -745,22 +731,12 @@ class LaneDetector(object):
         return K
     
     def get_nearest_waypoints_same_lane(self, nearest_waypoint, all_waypoints, k=20):
-        # Initialize a list to store distances and waypoints
         distances_and_waypoints = []
 
         for waypoint in all_waypoints:
-            # Check if Road ID and Lane ID match
             if waypoint.road_id == nearest_waypoint.road_id and waypoint.lane_id == nearest_waypoint.lane_id:
-                # Calculate distance between waypoints
                 distance = math.sqrt((waypoint.transform.location.x - nearest_waypoint.transform.location.x)**2 + (waypoint.transform.location.y - nearest_waypoint.transform.location.y)**2)
-            # Calculate relative angle between vehicle heading and waypoint
-                angle_to_waypoint = math.atan2(waypoint.transform.location.y - self.vehicle.get_transform().location.y, waypoint.transform.location.x - self.vehicle.get_transform().location.x)
-                angle_difference = abs(self.vehicle.get_transform().rotation.yaw - angle_to_waypoint)
-                angle_difference = min(angle_difference, 2 * math.pi - angle_difference)  # Take the minimum angle difference
-
-                # Add distance and waypoint to the list if waypoint is in front of the vehicle
-                if angle_difference < math.pi / 2:  # 90 degrees angle threshold
-                    distances_and_waypoints.append((distance, waypoint))
+                distances_and_waypoints.append((distance, waypoint))
 
         # Sort the list based on distances
         distances_and_waypoints.sort()
@@ -1300,11 +1276,9 @@ class CameraManager(object):
     def render(self, display):
         if self.surface is not None:
             display.blit(self.surface, (0, 0)) # self.surface is the image from camera sensor
-            lane_detector.create_projection_utils(self.sensor_width, self.sensor_height, self.sensor_fov)
             left_lane_points, right_lane_points = lane_detector.detect(self.sensor)
             if len(left_lane_points) > 0:
                 for left_lane_point, right_lane_point in zip(left_lane_points, right_lane_points):
-                    # Draw circles on the Pygame surface
                     try:
                         pygame.draw.circle(display, (0, 0, 255), left_lane_point, 8)  # Blue circle for left lane point
                         pygame.draw.circle(display, (0, 0, 255), right_lane_point, 8)  # Blue circle for right lane point
@@ -1352,7 +1326,6 @@ class CameraManager(object):
             array = array[:, :, :3]
             array = array[:, :, ::-1]
             self.surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
-            self.lane_detector_image = np.reshape(np.copy(image.raw_data), (image.height, image.width, 4))
         if self.recording:
             image.save_to_disk('_out/%08d' % image.frame)
 
@@ -1367,6 +1340,7 @@ def game_loop(args):
     pygame.font.init()
     world = None
     original_settings = None
+
     global lane_detector
 
     try:
@@ -1428,8 +1402,6 @@ def game_loop(args):
             world.destroy()
 
         pygame.quit()
-        cv2.destroyAllWindows()
-
 
 # ==============================================================================
 # -- main() --------------------------------------------------------------------
