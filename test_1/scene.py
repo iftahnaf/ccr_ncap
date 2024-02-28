@@ -105,7 +105,7 @@ class Scene(object):
         return False
     
     @staticmethod
-    def save_data_to_csv(velocity, acceleration, jerk, relative_distance, bbox, filename):
+    def save_data_to_csv(velocity: carla.Vector3D, acceleration: carla.Vector3D, jerk: list[float], relative_distance: float, bbox: list[float], filename: str) -> None:
         header = "velocity_x,velocity_y,velocity_z,acceleration_x,acceleration_y,acceleration_z,jerk_x,jerk_y,jerk_z,relative_distance,bbox_top_left_x,bbox_top_left_y,bbox_top_right_x,bbox_top_right_y,bbox_bottom_left_x,bbox_bottom_left_y,bbox_bottom_right_x,bbox_bottom_right_y\n"
         if not os.path.exists(filename) or os.path.getsize(filename) == 0:
             with open(filename, 'w') as f:
@@ -114,8 +114,8 @@ class Scene(object):
             f.write(f"{velocity.x},{velocity.y},{velocity.z},{acceleration.x},{acceleration.y},{acceleration.z},{jerk[0]},{jerk[1]},{jerk[2]},{relative_distance},{bbox[0]},{bbox[3]},{bbox[1]},{bbox[3]},{bbox[0]},{bbox[2]},{bbox[1]},{bbox[2]},\n")
 
     @staticmethod
-    def get_vehicle_dimensions(blueprint):
-        bounding_box = blueprint.bounding_box.extent
+    def get_vehicle_dimensions(vehicle: carla.Vehicle) -> list[float]:
+        bounding_box = vehicle.bounding_box.extent
         length = 2 * bounding_box.x
         width = 2 * bounding_box.y
         height = 2 * bounding_box.z
@@ -125,7 +125,7 @@ class Scene(object):
         return dimensions
     
     @staticmethod
-    def spawn_camera(world, ego_vehicle, ego_vehicle_dimensions, view_width=1920, view_height=1080, view_fov=90):
+    def spawn_camera(world: carla.World, ego_vehicle: carla.Vehicle, ego_vehicle_dimensions: list[float], view_width: int=1920, view_height: int=1080, view_fov: int=90) -> tuple[carla.Actor, carla.Sensor]:
         sensor_front = world.get_blueprint_library().find('sensor.camera.rgb')
         sensor_front.set_attribute('image_size_x', str(view_width))
         sensor_front.set_attribute('image_size_y', str(view_height))

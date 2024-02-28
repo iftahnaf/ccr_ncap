@@ -1,31 +1,12 @@
-import pygame
-from pygame.locals import K_ESCAPE
-from pygame.locals import K_SPACE
-from pygame.locals import K_a
-from pygame.locals import K_d
-from pygame.locals import K_s
-from pygame.locals import K_w
 import numpy as np
 import cv2
 import carla
-
-VIEW_WIDTH = 1920//2
-VIEW_HEIGHT = 1080//2
-VIEW_FOV = 90
-
-BB_COLOR = (248, 64, 24)
-
+import pygame
 
 class Visualizer:
     def __init__(self, camera, camera_bp):
         pygame.init()
-
         self.camera = camera
-    
-        self.display = pygame.display.set_mode(
-            (640, 480),
-            pygame.HWSURFACE | pygame.DOUBLEBUF)
-    
         self.clock = pygame.time.Clock()
         self.world_2_camera = np.array(camera.get_transform().get_inverse_matrix())
         
@@ -36,16 +17,6 @@ class Visualizer:
 
         # Calculate the camera projection matrix to project from 3D -> 2D
         self.K = self.build_projection_matrix(image_w, image_h, fov)
-
-    def draw_image(self, image, blend=False):
-        array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
-        array = np.reshape(array, (image.height, image.width, 4))
-        array = array[:, :, :3]
-        array = array[:, :, ::-1]
-        image_surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
-        if blend:
-            image_surface.set_alpha(100)
-        self.display.blit(image_surface, (0, 0))
 
     @staticmethod
     def build_projection_matrix(w, h, fov):
