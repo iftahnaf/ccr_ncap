@@ -2,7 +2,7 @@
 
 This repository contains [Euro NCAP](https://www.euroncap.com/en/about-euro-ncap/) tests in [CARLA](https://carla.org//) simulator.
 
-* [test_1](./test_1/) folder contains CCRs(Car-to-Car Rear stationary) test scenario in which an ego car accelerates and then brakes in from of a stationary car from 100m.
+* `test_1` folder contains CCRs(Car-to-Car Rear stationary) test scenario in which an ego car accelerates and then brakes in from of a stationary car from 100m.
 
 The folder contains few utilities:
 
@@ -16,7 +16,7 @@ The folder contains few utilities:
   <source src="./test_1/test_1.mp4">
 </video>
 
-* [test_2](./test_2/) folder holds the modified [manual_control.py](https://github.com/carla-simulator/carla/blob/master/PythonAPI/examples/manual_control.py) version, integrated with lane detector, visualize the vehicle's current lanes boundaries. **(Currently contains a bug in the waypoint selection 28/02/2024)**
+* `test_2` folder holds the modified [manual_control.py](https://github.com/carla-simulator/carla/blob/master/PythonAPI/examples/manual_control.py) version, integrated with lane detector, visualize the vehicle's current lanes boundaries. **(Currently contains a bug in the waypoint selection 28/02/2024)**
 
 ![](./test_2/test_2.png)
 
