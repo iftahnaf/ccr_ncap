@@ -143,8 +143,6 @@ try:
 except ImportError:
     raise RuntimeError('cannot import numpy, make sure numpy package is installed')
 
-import cv2
-
 # ==============================================================================
 # -- Global functions ----------------------------------------------------------
 # ==============================================================================
@@ -669,6 +667,8 @@ class LaneDetector(object):
         self.world = world.world
         self.vehicle = world.player
         self.map = self.world.get_map()
+
+        self.create_projection_utils(world.camera_manager.sensor_width, world.camera_manager.sensor_height, world.camera_manager.sensor_fov)
     
     def create_projection_utils(self, width, height, fov):
         self.image_w = width
@@ -715,21 +715,13 @@ class LaneDetector(object):
 
     @staticmethod
     def get_image_point(loc, K, w2c):
-        # Calculate 2D projection of 3D coordinate
-
-        # Format the input coordinate (loc is a carla.Position object)
         point = np.array([loc.x, loc.y, loc.z, 1])
-        # transform to camera coordinates
         point_camera = np.dot(w2c, point)
 
-        # New we must change from UE4's coordinate system to an "standard"
-        # (x, y ,z) -> (y, -z, x)
-        # and we remove the fourth componebonent also
         point_camera = [point_camera[1], -point_camera[2], point_camera[0]]
 
-        # now project 3D->2D using the camera matrix
         point_img = np.dot(K, point_camera)
-        # normalize
+
         point_img[0] /= point_img[2]
         point_img[1] /= point_img[2]
 
@@ -1300,7 +1292,6 @@ class CameraManager(object):
     def render(self, display):
         if self.surface is not None:
             display.blit(self.surface, (0, 0)) # self.surface is the image from camera sensor
-            lane_detector.create_projection_utils(self.sensor_width, self.sensor_height, self.sensor_fov)
             left_lane_points, right_lane_points = lane_detector.detect(self.sensor)
             if len(left_lane_points) > 0:
                 for left_lane_point, right_lane_point in zip(left_lane_points, right_lane_points):
@@ -1428,8 +1419,6 @@ def game_loop(args):
             world.destroy()
 
         pygame.quit()
-        cv2.destroyAllWindows()
-
 
 # ==============================================================================
 # -- main() --------------------------------------------------------------------
