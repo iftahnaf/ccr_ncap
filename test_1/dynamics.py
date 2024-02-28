@@ -1,4 +1,5 @@
 import carla
+import numpy as np
 class Dynamics():
 
     """
@@ -33,6 +34,9 @@ class Dynamics():
         self.vehicle = vehicle
         self.acceleration = self.get_acceleration(self.vehicle)
         self.dt = dt
+        self.previous_acceleration = None
+        self.filter_window_size = 5  
+        self.acceleration_history = {"x": [], "y": [], "z": []}
     
     @staticmethod
     def get_positon(vehicle: carla.Vehicle) -> carla.Location:
@@ -132,21 +136,48 @@ class Dynamics():
         Returns:
             list[float]: List containing the jerk components [jerk_x, jerk_y, jerk_z].
 
+        This method calculates the jerk (the rate of change of acceleration) of a vehicle
+        using a moving average filter to smooth out noisy acceleration data.
+
+        The function appends the current acceleration to a history buffer and then computes
+        the moving average acceleration over a specified window size. The jerk is then
+        calculated as the difference between the current filtered acceleration and the
+        previous filtered acceleration, divided by the time step.
+
+        The calculated jerk values are bounded within the range [-10, 10] to prevent
+        excessively large or small values.
+
         Example:
             ego_vehicle = get_some_vehicle()
             jerk = get_jerk(ego_vehicle)
             print(jerk)  # Output: [0.5, 0.2, -0.1] (example values)
         """
         current_acceleration = self.get_acceleration(vehicle)
-        previous_acceleration = self.acceleration
 
-        jerk_x = (current_acceleration.x - previous_acceleration.x) / self.dt
-        jerk_y = (current_acceleration.y - previous_acceleration.y) / self.dt
-        jerk_z = (current_acceleration.z - previous_acceleration.z) / self.dt
+        # Append current acceleration to the history
+        self.acceleration_history["x"].append(current_acceleration.x)
+        self.acceleration_history["y"].append(current_acceleration.y)
+        self.acceleration_history["z"].append(current_acceleration.z)
 
-        self.acceleration = current_acceleration
+        # Apply the moving average filter to each axis
+        filtered_acceleration = current_acceleration
+        if all(len(self.acceleration_history[axis]) >= self.filter_window_size for axis in ["x", "y", "z"]):
+            filtered_acceleration = carla.Vector3D(
+                x=np.mean(self.acceleration_history["x"][-self.filter_window_size:]),
+                y=np.mean(self.acceleration_history["y"][-self.filter_window_size:]),
+                z=np.mean(self.acceleration_history["z"][-self.filter_window_size:])
+            )
 
-        jerk = [jerk_x, jerk_y, jerk_z]
-        return jerk
+        # Calculate jerk
+        jerk = [0, 0, 0]
+        if self.previous_acceleration is not None:
+            jerk = [(getattr(filtered_acceleration, axis) - getattr(self.previous_acceleration, axis)) / self.dt for axis in ["x", "y", "z"]]
+
+        # Update previous acceleration
+        self.previous_acceleration = filtered_acceleration
+
+        saturated_jerk = [min(max(j, -10), 10) for j in jerk]
+
+        return saturated_jerk
 
         
