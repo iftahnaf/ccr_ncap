@@ -111,7 +111,7 @@ class Scene(object):
             with open(filename, 'w') as f:
                 f.write(header)
         with open(filename, 'a') as f:
-            f.write(f"{velocity.x},{velocity.y},{velocity.z},{acceleration.x},{acceleration.y},{acceleration.z},{jerk[0]},{jerk[1]},{jerk[2]},{relative_distance},{bbox[0]},{bbox[3]},{bbox[1]},{bbox[3]},{bbox[0]},{bbox[2]},{bbox[1]},{bbox[2]},\n")
+            f.write(f"{velocity.x},{velocity.y},{velocity.z},{acceleration.x},{acceleration.y},{acceleration.z},{jerk[0]},{jerk[1]},{jerk[2]},{relative_distance},{bbox[0]},{bbox[3]},{bbox[1]},{bbox[3]},{bbox[0]},{bbox[2]},{bbox[1]},{bbox[2]}\n")
 
     @staticmethod
     def get_vehicle_dimensions(vehicle: carla.Vehicle) -> list[float]:
