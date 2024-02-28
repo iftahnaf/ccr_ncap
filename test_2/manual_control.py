@@ -1329,7 +1329,6 @@ class CameraManager(object):
             array = array[:, :, :3]
             array = array[:, :, ::-1]
             self.surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
-            self.lane_detector_image = np.reshape(np.copy(image.raw_data), (image.height, image.width, 4))
         if self.recording:
             image.save_to_disk('_out/%08d' % image.frame)
 
