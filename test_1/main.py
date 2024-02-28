@@ -7,6 +7,10 @@ from scene import Scene
 from controller import Controller
 from visualizer import Visualizer
 
+import logging
+
+logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
+
 def main():
     actor_list = []
 
@@ -71,16 +75,16 @@ def main():
                 verdicts = visualizer.get_bbox_vertices()
                 Scene.save_data_to_csv(velocity, acceleration, jerk, relative_distance, verdicts, 'data.csv')
 
-                print(relative_distance)
+                logging.debug(relative_distance)
     finally:
-        print('destroying actors.')
+        logging.info('destroying actors.')
         for actor in actor_list:
             actor.destroy()
         cv2.destroyAllWindows()
-        print('done.')
+        logging.info('done.')
 
 if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt:
-        print('\nCancelled by user. Bye!')
+        logging.info('\nCancelled by user. Bye!')
