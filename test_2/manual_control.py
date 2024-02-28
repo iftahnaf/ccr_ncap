@@ -698,7 +698,7 @@ class LaneDetector(object):
                 except Exception as e:
                     if "'NoneType' object has no attribute 'transform'" in str(e):
                         return (0, 0), (0, 0)
-                    
+                                        
                 left_lane_point = self.get_image_point(left_lane_location, self.K, self.world_2_camera)
                 right_lane_point = self.get_image_point(right_lane_location, self.K, self.world_2_camera)
 
