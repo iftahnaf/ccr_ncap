@@ -5,7 +5,6 @@ import numpy as np
 from dynamics import Dynamics
 from scene import Scene
 from controller import Controller
-from estimator import RangeEstimator
 from visualizer import Visualizer
 
 def main():
@@ -28,17 +27,19 @@ def main():
         ego_vehicle = Scene.spawn_vehicle(world, 'vehicle.bmw.grandtourer', ego_start_pose)
         ego_vehicle.set_simulate_physics(True)
 
-        # get the dimensions of the vehicles
+        # Get the dimensions of the vehicles
         ego_vehicle_dimensions = Scene.get_vehicle_dimensions(ego_vehicle)
         stationary_vehicle_dimensions = Scene.get_vehicle_dimensions(stationary_vehicle)
 
         # Spawn the camera
         camera_front, sensor_front = Scene.spawn_camera(world, ego_vehicle, ego_vehicle_dimensions, view_width=1920, view_height=1080, view_fov=90)
 
+        # Append the actors to the list
         actor_list.append(stationary_vehicle)
         actor_list.append(ego_vehicle)
         actor_list.append(camera_front)
 
+        # Create the dynamics and visualizer objects
         state = Dynamics(ego_vehicle, dt=(1/20))
         visualizer = Visualizer(camera_front, sensor_front)
 
@@ -52,8 +53,8 @@ def main():
                 # Advance the simulation and wait for the data.
                 _, image_front = sync_mode.tick(timeout=2.0)
 
-                # get the range between the two vehicles
-                relative_distance = RangeEstimator.naive_range_estimator(ego_vehicle, stationary_vehicle, ego_vehicle_dimensions, stationary_vehicle_dimensions)
+                # get the relative distance between the two vehicles
+                relative_distance = state.get_ground_truth_relative_distance(ego_vehicle, stationary_vehicle, ego_vehicle_dimensions, stationary_vehicle_dimensions)
 
                 # calculate the control signal
                 speed = np.linalg.norm([state.get_velocity(ego_vehicle).x, state.get_velocity(ego_vehicle).y, state.get_velocity(ego_vehicle).z])

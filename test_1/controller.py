@@ -3,7 +3,7 @@ import carla
 class Controller():
     
     @staticmethod
-    def range_controller(relative_distance, current_speed, desired_range=1.0, kt_p=0.1, kt_d = 0.05, kb_p=0.05):
+    def range_controller(relative_distance: float, current_speed: float, desired_range: float = 1, kt_p: float = 0.1, kt_d: float = 0.05, kb_p:float = 0.05) -> carla.VehicleControl:
 
         if relative_distance > 50.0:
             req_throttle = 1.0

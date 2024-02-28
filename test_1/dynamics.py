@@ -22,6 +22,16 @@ class Dynamics():
         acceleration = vehicle.get_acceleration() # m/s^2
         return acceleration
     
+    @staticmethod
+    def get_ground_truth_relative_distance(ego_vehicle: carla.Vehicle, stationary_vehicle: carla.Vehicle, ego_vehicle_dimensions: list, stationary_vehicle_dimensions: list) -> float:
+        ego_location = ego_vehicle.get_location()
+        stationary_location = stationary_vehicle.get_location()
+        raw_distance = ego_location.distance(stationary_location)
+
+        distance = raw_distance - (ego_vehicle_dimensions[0] / 2) - (stationary_vehicle_dimensions[0] / 2)
+
+        return distance
+    
     def get_jerk(self, vehicle: carla.Vehicle) -> list[float]:
         current_acceleration = self.get_acceleration(vehicle)
         previous_acceleration = self.acceleration
