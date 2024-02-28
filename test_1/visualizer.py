@@ -78,7 +78,8 @@ class Visualizer:
 
         return point_img[0:2]
     
-    def draw_bbox(self, img, world, vehicle, relative_distance):
+    def draw_bbox(self, image_front, world, vehicle, relative_distance):
+        img = np.reshape(np.copy(image_front.raw_data), (image_front.height, image_front.width, 4))
         world_2_camera = np.array(self.camera.get_transform().get_inverse_matrix())
 
         for npc in world.get_actors().filter('*vehicle*'):

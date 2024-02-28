@@ -1,4 +1,4 @@
-
+import carla
 class Dynamics():
 
     def __init__(self, vehicle, dt=0.05):
@@ -7,22 +7,22 @@ class Dynamics():
         self.dt = dt
     
     @staticmethod
-    def get_positon(vehicle):
+    def get_positon(vehicle: carla.Vehicle) -> carla.Location:
         transfrom = vehicle.get_transform()
         location = transfrom.location
         return location
 
     @staticmethod
-    def get_velocity(vehicle):
+    def get_velocity(vehicle: carla.Vehicle) -> carla.Vector3D:
         velocity = vehicle.get_velocity() # m/s
         return velocity
 
     @staticmethod
-    def get_acceleration(vehicle):
+    def get_acceleration(vehicle: carla.Vehicle) -> carla.Vector3D:
         acceleration = vehicle.get_acceleration() # m/s^2
         return acceleration
     
-    def get_jerk(self, vehicle):
+    def get_jerk(self, vehicle: carla.Vehicle) -> list[float]:
         current_acceleration = self.get_acceleration(vehicle)
         previous_acceleration = self.acceleration
 
