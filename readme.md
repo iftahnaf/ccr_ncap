@@ -13,9 +13,8 @@ The folder contains few utilities:
 5. [Analysis](./test_1/analysis.py) - parse the `data.csv` file and plot few insights from the simulation.
 
 <video width="640" height="480" controls>
-  <source src="./test_1/test_1.mp4" type="video/mp4">
+  <source src="./test_1/test_1.mp4">
 </video>
-\
 
 * [test_2](./test_2/) folder holds the modified [manual_control.py](https://github.com/carla-simulator/carla/blob/master/PythonAPI/examples/manual_control.py) version, integrated with lane detector, visualize the vehicle's current lanes boundaries. **(Currently contains a bug in the waypoint selection 28/02/2024)**
 
@@ -45,6 +44,7 @@ The folder contains few utilities:
 # Run
 
 * Run `test_1` with:
+  
                 cd ccr_ncap/
                 python3 ./test_1/main.py
 
