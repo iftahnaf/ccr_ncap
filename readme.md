@@ -22,29 +22,33 @@ The folder contains few utilities:
 
 # Prerequisite
 
-1. [CARLA docker image](https://carla.readthedocs.io/en/latest/build_docker/) - `0.9.15` version.
+1. [CARLA docker image](https://carla.readthedocs.io/en/latest/build_docker/) - `0.9.15` version:
+
+                docker pull carlasim/carla:0.9.15
+
+
 2. CARLA Python package, install with:
 
                 pip install carla==0.9.15
-
 
 # Install
 
 1. Clone this repository:
 
-                git clone git@github.com:iftahnaf/ccr_ncap.git
-
-2. Pull the CARLA docker image `0.9.15` version:
-
-                docker pull carlasim/carla:0.9.15
+                git clone git@github.com:iftahnaf/ccr_ncap.git            
 
 *Note: make sure that you can run docker without sudo*
 
 
 # Run
+Open two terminals.
 
-* Run `test_1` with:
+In the first terminal:
   
                 cd ccr_ncap/
                 python3 ./test_1/main.py
+
+In the second terminal:
+
+                docker run --privileged --gpus all --net=host -e DISPLAY=$DISPLAY carlasim/carla:0.9.15 /bin/bash ./CarlaUE4.sh -RenderOffScreen
 
