@@ -2,11 +2,11 @@
 
 This repository contains [Euro NCAP](https://www.euroncap.com/en/about-euro-ncap/) tests in [CARLA](https://carla.org//) simulator.
 
-* `test_1` folder contains CCRs(Car-to-Car Rear stationary) test scenario in which an ego car accelerates and then brakes in from of a stationary car from 100m.
+* `test_1` folder contains CCRs(Car-to-Car Rear stationary) test scenario in which an ego car accelerates and then brakes in front of a stationary car from 100 [m].
 
 The folder contains a few utilities:
 
-1. [Controller](./test_1/controller.py) - contains simple PD and P controllers for the throttle / brake based on the current relative distance.
+1. [Controller](./test_1/controller.py) - contains simple PD and P controllers for the throttle/brake based on the current relative distance.
 2. [Dynamics](./test_1/dynamics.py) - retrieve information about the state of the ego car.
 3. [Scene](./test_1/scene.py) - functions to manage the simulation.
 4. [Visualizer](./test_1/visualizer.py) - functions to plot ground-truth bounding box around the stationary car.
