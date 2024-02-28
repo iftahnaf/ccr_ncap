@@ -2,6 +2,13 @@
 
 
 
+## v0.1.1 (2024-02-28)
+
+### Fix
+
+* fix: filtering the jerk measurments (#5) ([`66678d4`](https://github.com/iftahnaf/ccr_ncap/commit/66678d419f2e9f33a46218eb48f3d67cbe7999ae))
+
+
 ## v0.1.0 (2024-02-28)
 
 ### Ci
