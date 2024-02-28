@@ -26,6 +26,7 @@ def main():
         # Spawn the vehicles and set their physics
         stationary_vehicle = Scene.spawn_vehicle(world, 'vehicle.tesla.model3', stationary_start_pose)
         ego_vehicle = Scene.spawn_vehicle(world, 'vehicle.bmw.grandtourer', ego_start_pose)
+        
         stationary_vehicle.set_simulate_physics(False)
         ego_vehicle.set_simulate_physics(True)
 

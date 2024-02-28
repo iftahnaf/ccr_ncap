@@ -84,8 +84,7 @@ class Visualizer:
                         cv2.line(img, (int(self.x_min),int(self.y_min)), (int(self.x_min),int(self.y_max)), (0,0,255, 255), 1)
                         cv2.line(img, (int(self.x_max),int(self.y_min)), (int(self.x_max),int(self.y_max)), (0,0,255, 255), 1)
 
-
-        cv2.imshow('ImageWindowName',img)
+        cv2.imshow('Bounding Box Image',img)
         cv2.waitKey(1)
 
     def get_bbox_vertices(self) -> list[float]:
@@ -95,6 +94,9 @@ class Visualizer:
             if "has no attribute 'x_min'" in str(e):
                 return [0, 0, 0, 0]
         return verdicts
+
+    def __del__(self):
+        cv2.destroyAllWindows()
 
     # Bounding box docs: https://carla.readthedocs.io/en/latest/tuto_G_bounding_boxes/
  
