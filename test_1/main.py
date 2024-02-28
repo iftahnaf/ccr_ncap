@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 
 from dynamics import Dynamics
-from sync_mode_scene import CarlaSyncMode
+from scene import Scene
 from controller import Controller
 from estimator import RangeEstimator
 from visualizer import Visualizer
@@ -29,16 +29,16 @@ def main():
         blueprint_library = world.get_blueprint_library()
 
         # Spawn the stationary vehicle
-        stationary_vehicle = CarlaSyncMode.spawn_vehicle(world, 'vehicle.tesla.model3', stationary_start_pose)
+        stationary_vehicle = Scene.spawn_vehicle(world, 'vehicle.tesla.model3', stationary_start_pose)
         stationary_vehicle.set_simulate_physics(False)
 
         # Spawn the controllable vehicle
-        ego_vehicle = CarlaSyncMode.spawn_vehicle(world, 'vehicle.bmw.grandtourer', ego_start_pose)
+        ego_vehicle = Scene.spawn_vehicle(world, 'vehicle.bmw.grandtourer', ego_start_pose)
         ego_vehicle.set_simulate_physics(True)
 
         # get the dimensions of the vehicles
-        ego_vehicle_dimensions = CarlaSyncMode.get_vehicle_dimensions(ego_vehicle)
-        stationary_vehicle_dimensions = CarlaSyncMode.get_vehicle_dimensions(stationary_vehicle)
+        ego_vehicle_dimensions = Scene.get_vehicle_dimensions(ego_vehicle)
+        stationary_vehicle_dimensions = Scene.get_vehicle_dimensions(stationary_vehicle)
 
         # Spawn the camera
         sensor_front = blueprint_library.find('sensor.camera.rgb')
@@ -46,13 +46,11 @@ def main():
         sensor_front.set_attribute('image_size_y', str(VIEW_HEIGHT))
         sensor_front.set_attribute('fov', str(VIEW_FOV))
 
-        camera_x_offset = ego_vehicle_dimensions[0] / 2 
-        camera_y_offset = ego_vehicle_dimensions[1] / 2 
-        camera_z_offset = ego_vehicle_dimensions[2] / 2 
+        camera_offsets = [x/2 for x in ego_vehicle_dimensions]
         
         camera_front = world.spawn_actor(
             sensor_front,
-            carla.Transform(carla.Location(x=camera_x_offset, y=camera_y_offset, z=camera_z_offset), carla.Rotation(pitch=0, yaw=0, roll=0)),
+            carla.Transform(carla.Location(x=camera_offsets[0], y=camera_offsets[1], z=camera_offsets[2]), carla.Rotation(pitch=0, yaw=0, roll=0)),
             attach_to=ego_vehicle)
 
         actor_list.append(stationary_vehicle)
@@ -65,9 +63,9 @@ def main():
         desired_range = 1.0
 
         # Create a synchronous mode context.
-        with CarlaSyncMode(world, camera_front, fps=30) as sync_mode:
+        with Scene(world, camera_front, fps=30) as sync_mode:
             while True:
-                if CarlaSyncMode.should_quit():
+                if Scene.should_quit():
                     return
                 visualizer.clock.tick()
 
@@ -93,7 +91,7 @@ def main():
                 acceleration = state.get_acceleration(ego_vehicle)
                 verdicts = visualizer.get_bbox_vertices()
                 jerk = state.get_jerk(ego_vehicle)
-                CarlaSyncMode.save_data_to_csv(velocity, acceleration, jerk, relative_distance, verdicts, 'data.csv')
+                Scene.save_data_to_csv(velocity, acceleration, jerk, relative_distance, verdicts, 'data.csv')
 
                 print(relative_distance)
 

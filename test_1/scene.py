@@ -38,7 +38,7 @@ except ImportError:
     import Queue as queue
 
 
-class CarlaSyncMode(object):
+class Scene(object):
     """
     Context manager to synchronize output from different sensors. Synchronous
     mode is enabled as long as we are inside this context
