@@ -10,16 +10,14 @@ class Visualizer:
         self.clock = pygame.time.Clock()
         self.world_2_camera = np.array(camera.get_transform().get_inverse_matrix())
         
-        # Get the attributes from the camera
         image_w = camera_bp.get_attribute("image_size_x").as_int()
         image_h = camera_bp.get_attribute("image_size_y").as_int()
         fov = camera_bp.get_attribute("fov").as_float()
 
-        # Calculate the camera projection matrix to project from 3D -> 2D
         self.K = self.build_projection_matrix(image_w, image_h, fov)
 
     @staticmethod
-    def build_projection_matrix(w, h, fov):
+    def build_projection_matrix(w: int, h: int, fov: int) -> np.ndarray:
         focal = w / (2.0 * np.tan(fov * np.pi / 360.0))
         K = np.identity(3)
         K[0, 0] = K[1, 1] = focal
@@ -28,28 +26,20 @@ class Visualizer:
         return K
     
     @staticmethod
-    def get_image_point(loc, K, w2c):
-        # Calculate 2D projection of 3D coordinate
-
-        # Format the input coordinate (loc is a carla.Position object)
+    def get_image_point(loc: carla.Location, K: np.ndarray, w2c: np.ndarray) -> list[float]:
         point = np.array([loc.x, loc.y, loc.z, 1])
-        # transform to camera coordinates
         point_camera = np.dot(w2c, point)
-
-        # New we must change from UE4's coordinate system to an "standard"
-        # (x, y ,z) -> (y, -z, x)
-        # and we remove the fourth componebonent also
         point_camera = [point_camera[1], -point_camera[2], point_camera[0]]
 
-        # now project 3D->2D using the camera matrix
         point_img = np.dot(K, point_camera)
-        # normalize
+
         point_img[0] /= point_img[2]
         point_img[1] /= point_img[2]
 
         return point_img[0:2]
     
-    def draw_bbox(self, image_front, world, vehicle, relative_distance):
+    def draw_bbox(self, image_front: carla.Image, world: carla.World, vehicle: carla.Vehicle, relative_distance: float) -> None:
+
         img = np.reshape(np.copy(image_front.raw_data), (image_front.height, image_front.width, 4))
         world_2_camera = np.array(self.camera.get_transform().get_inverse_matrix())
 
@@ -61,13 +51,8 @@ class Visualizer:
                 bb = npc.bounding_box
                 dist = relative_distance
 
-                # Filter for the vehicles within 50m
                 if dist < 100.0:
 
-                # Calculate the dot product between the forward vector
-                # of the vehicle and the vector between the vehicle
-                # and the other vehicle. We threshold this dot product
-                # to limit to drawing bounding boxes IN FRONT OF THE CAMERA
                     forward_vec = vehicle.get_transform().get_forward_vector()
                     ray = npc.get_transform().location - vehicle.get_transform().location
 
@@ -103,7 +88,7 @@ class Visualizer:
         cv2.imshow('ImageWindowName',img)
         cv2.waitKey(1)
 
-    def get_bbox_vertices(self):
+    def get_bbox_vertices(self) -> list[float]:
         try:
             verdicts = [self.x_min, self.x_max, self.y_min, self.y_max]
         except Exception as e:

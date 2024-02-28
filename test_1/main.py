@@ -19,12 +19,10 @@ def main():
         stationary_start_pose = carla.Transform(carla.Location(x=-7.53, y=170.0, z=0.3), carla.Rotation(pitch=0.0, yaw=-90.0, roll=0.0))
         ego_start_pose = carla.Transform(carla.Location(x=-7.53, y=275.0, z=0.3), carla.Rotation(pitch=0.0, yaw=-90.0, roll=0.0))
 
-        # Spawn the stationary vehicle
+        # Spawn the vehicles and set their physics
         stationary_vehicle = Scene.spawn_vehicle(world, 'vehicle.tesla.model3', stationary_start_pose)
-        stationary_vehicle.set_simulate_physics(False)
-
-        # Spawn the controllable vehicle
         ego_vehicle = Scene.spawn_vehicle(world, 'vehicle.bmw.grandtourer', ego_start_pose)
+        stationary_vehicle.set_simulate_physics(False)
         ego_vehicle.set_simulate_physics(True)
 
         # Get the dimensions of the vehicles
