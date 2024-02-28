@@ -668,14 +668,7 @@ class LaneDetector(object):
         self.vehicle = world.player
         self.map = self.world.get_map()
 
-        self.create_projection_utils(world.camera_manager.sensor_width, world.camera_manager.sensor_height, world.camera_manager.sensor_fov)
-    
-    def create_projection_utils(self, width, height, fov):
-        self.image_w = width
-        self.image_h = height
-        self.fov = fov
-
-        self.K = self.build_projection_matrix(self.image_w, self.image_h, self.fov)
+        self.K = self.build_projection_matrix(world.camera_manager.sensor_width, world.camera_manager.sensor_height, world.camera_manager.sensor_fov)
         
     def detect(self, camera):
         self.world_2_camera = np.array(camera.get_transform().get_inverse_matrix())
@@ -686,6 +679,7 @@ class LaneDetector(object):
         all_waypoints = self.map.generate_waypoints(distance=1.0)
 
         location = self.vehicle.get_location()
+
         nearest_waypoint = self.map.get_waypoint(location, project_to_road=True)
 
         waypoints_on_map = self.get_nearest_waypoints_same_lane(nearest_waypoint, all_waypoints)
@@ -745,14 +739,7 @@ class LaneDetector(object):
             if waypoint.road_id == nearest_waypoint.road_id and waypoint.lane_id == nearest_waypoint.lane_id:
                 # Calculate distance between waypoints
                 distance = math.sqrt((waypoint.transform.location.x - nearest_waypoint.transform.location.x)**2 + (waypoint.transform.location.y - nearest_waypoint.transform.location.y)**2)
-            # Calculate relative angle between vehicle heading and waypoint
-                angle_to_waypoint = math.atan2(waypoint.transform.location.y - self.vehicle.get_transform().location.y, waypoint.transform.location.x - self.vehicle.get_transform().location.x)
-                angle_difference = abs(self.vehicle.get_transform().rotation.yaw - angle_to_waypoint)
-                angle_difference = min(angle_difference, 2 * math.pi - angle_difference)  # Take the minimum angle difference
-
-                # Add distance and waypoint to the list if waypoint is in front of the vehicle
-                if angle_difference < math.pi / 2:  # 90 degrees angle threshold
-                    distances_and_waypoints.append((distance, waypoint))
+                distances_and_waypoints.append((distance, waypoint))
 
         # Sort the list based on distances
         distances_and_waypoints.sort()
@@ -1295,7 +1282,6 @@ class CameraManager(object):
             left_lane_points, right_lane_points = lane_detector.detect(self.sensor)
             if len(left_lane_points) > 0:
                 for left_lane_point, right_lane_point in zip(left_lane_points, right_lane_points):
-                    # Draw circles on the Pygame surface
                     try:
                         pygame.draw.circle(display, (0, 0, 255), left_lane_point, 8)  # Blue circle for left lane point
                         pygame.draw.circle(display, (0, 0, 255), right_lane_point, 8)  # Blue circle for right lane point
@@ -1358,6 +1344,7 @@ def game_loop(args):
     pygame.font.init()
     world = None
     original_settings = None
+
     global lane_detector
 
     try:
