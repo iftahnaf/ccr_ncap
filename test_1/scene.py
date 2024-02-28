@@ -33,14 +33,39 @@ except ImportError:
 
 
 class Scene(object):
+
     """
-    Context manager to synchronize output from different sensors. Synchronous
-    mode is enabled as long as we are inside this context
+    Represents a scene in the Carla simulation environment.
 
-        with CarlaSyncMode(world, sensors) as sync_mode:
-            while True:
-                data = sync_mode.tick(timeout=1.0)
+    This class provides functionality to manage the simulation scene, including setting up the environment,
+    interacting with vehicles and sensors, and handling data collection.
 
+    Attributes:
+        world (carla.World): The Carla world object associated with the scene.
+        sensors (tuple): A tuple containing sensor objects used in the scene.
+        frame: The current frame of the simulation.
+        delta_seconds (float): Time interval between simulation frames.
+        _queues (list): A list of queues for handling event data from sensors.
+        _settings: Carla world settings used to restore the original settings when exiting the scene.
+
+    Methods:
+        __init__: Initializes a new Scene object.
+        __enter__: Context manager entry method to set up the scene.
+        tick: Advances the simulation by one frame and retrieves sensor data.
+        __exit__: Context manager exit method to clean up the scene.
+        _retrieve_data: Retrieves sensor data from the queue.
+        spawn_vehicle: Spawns a vehicle in the simulation.
+        remove_all_actors: Removes all actors from the simulation.
+        should_quit: Checks if the user wants to quit the simulation.
+        save_data_to_csv: Saves vehicle data to a CSV file.
+        get_vehicle_dimensions: Retrieves the dimensions of a vehicle.
+        spawn_camera: Spawns a camera sensor attached to a vehicle.
+
+    Example:
+        with Scene(world, sensor_front, sensor_rear) as scene:
+            while not scene.should_quit():
+                data = scene.tick(timeout=1)
+                process_data(data)
     """
 
     def __init__(self, world, *sensors, **kwargs):

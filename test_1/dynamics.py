@@ -1,6 +1,34 @@
 import carla
 class Dynamics():
 
+    """
+    Provides functionality to calculate vehicle dynamics and related information.
+
+    This class encapsulates methods for computing various vehicle dynamics properties,
+    such as position, velocity, acceleration, jerk, and relative distance.
+
+    Attributes:
+        vehicle (carla.Vehicle): The vehicle object for which dynamics are calculated.
+        dt (float): Time interval for calculating jerk.
+
+    Methods:
+        __init__: Initializes a new Dynamics object.
+        get_position: Retrieves the position (location) of a given vehicle.
+        get_velocity: Retrieves the velocity of a given vehicle.
+        get_acceleration: Retrieves the acceleration of a given vehicle.
+        get_ground_truth_relative_distance: Computes the ground truth relative distance between two vehicles.
+        get_jerk: Calculates the jerk (rate of change of acceleration) of a vehicle.
+
+    Example:
+        vehicle = get_some_vehicle()  # Get a vehicle instance from somewhere
+        dynamics = Dynamics(vehicle)  # Create a Dynamics object for the vehicle
+        position = dynamics.get_position()  # Get the position of the vehicle
+        velocity = dynamics.get_velocity()  # Get the velocity of the vehicle
+        acceleration = dynamics.get_acceleration()  # Get the acceleration of the vehicle
+        jerk = dynamics.get_jerk()  # Get the jerk of the vehicle
+        relative_distance = dynamics.get_ground_truth_relative_distance(another_vehicle)  # Get the relative distance to another vehicle
+    """
+
     def __init__(self, vehicle, dt=0.05):
         self.vehicle = vehicle
         self.acceleration = self.get_acceleration(self.vehicle)
