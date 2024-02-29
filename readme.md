@@ -6,7 +6,7 @@ This repository contains [Euro NCAP](https://www.euroncap.com/en/about-euro-ncap
 
 The folder contains a few utilities:
 
-1. [Controller](./test_1/controller.py) - contains simple PD and P controllers for the throttle/brake based on the current relative distance.
+1. [Controller](./test_1/controller.py) - contains simple controller for the throttle/brake based on the current relative distance.
 2. [Dynamics](./test_1/dynamics.py) - retrieve information about the state of the ego car.
 3. [Scene](./test_1/scene.py) - functions to manage the simulation.
 4. [Visualizer](./test_1/visualizer.py) - functions to plot ground-truth bounding box around the stationary car.
@@ -20,7 +20,7 @@ The folder contains a few utilities:
 
 # Prerequisite
 
-1. [CARLA docker image](https://carla.readthedocs.io/en/latest/build_docker/) - `0.9.15` version:
+1. [CARLA docker image](https://carla.readthedocs.io/en/latest/build_docker/) - version: `0.9.15` 
 
                 docker pull carlasim/carla:0.9.15
 
@@ -47,5 +47,5 @@ In the first terminal:
 
 In the second terminal:
 
-                dd ccr_ncap/
+                cd ccr_ncap/
                 python3 ./test_1/main.py
