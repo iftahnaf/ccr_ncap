@@ -28,4 +28,4 @@ services:
       stdin_open: true
       tty: true
       command: >
-        /bin/bash -c "sleep 10 && python3 test_1/main.py"
+        /bin/bash -c "sleep 10 && python3 test_2/manual_control.py"

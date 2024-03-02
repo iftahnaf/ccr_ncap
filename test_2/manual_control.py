@@ -735,7 +735,7 @@ class LaneDetector(object):
 
         for waypoint in all_waypoints:
             if waypoint.road_id == nearest_waypoint.road_id and waypoint.lane_id == nearest_waypoint.lane_id:
-                distance = math.sqrt((waypoint.transform.location.x - nearest_waypoint.transform.location.x)**2 + (waypoint.transform.location.y - nearest_waypoint.transform.location.y)**2)
+                distance = math.sqrt((waypoint.transform.location.x - nearest_waypoint.transform.location.x + nearest_waypoint.lane_width / 2)**2 + (waypoint.transform.location.y - nearest_waypoint.transform.location.y)**2)
                 distances_and_waypoints.append((distance, waypoint))
 
         # Sort the list based on distances
