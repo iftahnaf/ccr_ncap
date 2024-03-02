@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+    server:
+      image: carlasim/carla:0.9.15
+      privileged: true
+      devices:
+        - "/dev/dri:/dev/dri"
+      environment:
+        - DISPLAY:${DISPLAY}
+        - NVIDIA_VISIBLE_DEVICES:all
+      command: ["/bin/bash", "./CarlaUE4.sh", "-RenderOffScreen"]
+      network_mode: "host"
+      runtime: nvidia
+      volumes:
+          - /tmp/.X11-unix:/tmp/.X11-unix
+
+    client:
+      build:
+        context: .
+        dockerfile: Dockerfile
+      image: carla_client
+      container_name: carla_client
+      network_mode: "host"
+      environment:
+        - DISPLAY=${DISPLAY}
+      privileged: true
+      stdin_open: true
+      tty: true
+      command: >
+        /bin/bash -c "sleep 10 && python3 test_1/main.py"
