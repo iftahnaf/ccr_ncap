@@ -29,6 +29,8 @@ The folder contains a few utilities:
 
                 pip install carla==0.9.15
 
+3. docker compose.
+
 # Install
 
 1. Clone this repository:
@@ -39,6 +41,21 @@ The folder contains a few utilities:
 
 
 # Run
+
+## Running with docker-compose
+Using docker-compose, you will launch server(CARLA simulator) and client(Python API client) services for the simulation.
+Running with:
+
+        docker compose up
+
+Changing the script is done via altering the command in the [docker-compose.yml](docker-compose.yml):
+
+```yaml
+      command: >
+        /bin/bash -c "sleep 10 && python3 test_1/main.py"
+```
+
+## Running from terminal:
 Open two terminals.
 
 In the first terminal:
@@ -49,3 +66,5 @@ In the second terminal:
 
                 cd ccr_ncap/
                 python3 ./test_1/main.py
+
+
